@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost } from '../api/api';
+import { apiGet, apiPost, apiPatch } from '../api/api';
 import { getToken } from '../utils/auth';
 
 const Appointments = () => {
@@ -38,6 +38,18 @@ const Appointments = () => {
     }
   };
 
+  const handleStatusChange = async (appointmentId, status) => {
+    setMessage('');
+    try {
+      const token = getToken();
+      const updated = await apiPatch(`/appointments/${appointmentId}`, { status }, token);
+      setAppointments((prev) => prev.map((item) => (item._id === appointmentId ? updated : item)));
+      setMessage('Appointment status updated.');
+    } catch (err) {
+      setMessage('Unable to update appointment.');
+    }
+  };
+
   return (
     <div className="page-card">
       <h1>Appointment Manager</h1>
@@ -73,6 +85,7 @@ const Appointments = () => {
                 <th>Doctor</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -82,6 +95,16 @@ const Appointments = () => {
                   <td>{appointment.doctorId?.name || appointment.doctorId || '—'}</td>
                   <td>{new Date(appointment.appointmentDate).toLocaleString()}</td>
                   <td>{appointment.status}</td>
+                  <td>
+                    <select
+                      value={appointment.status}
+                      onChange={(e) => handleStatusChange(appointment._id, e.target.value)}
+                    >
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </td>
                 </tr>
               ))}
             </tbody>

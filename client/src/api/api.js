@@ -28,3 +28,24 @@ export const apiGet = async (path, token) => {
   });
   return response.json();
 };
+
+export const apiGetBlob = async (path, token) => {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'GET',
+    headers: createHeaders(token),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || 'Failed to download file');
+  }
+  return response.blob();
+};
+
+export const apiPatch = async (path, body, token) => {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: createHeaders(token),
+    body: JSON.stringify(body),
+  });
+  return response.json();
+};

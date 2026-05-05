@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost } from '../api/api';
+import { apiGet, apiGetBlob, apiPost, apiPatch } from '../api/api';
 import { getToken } from '../utils/auth';
 
 const Billing = () => {
@@ -35,6 +35,35 @@ const Billing = () => {
       setMessage('Billing record created.');
     } catch (err) {
       setMessage('Unable to create billing record.');
+    }
+  };
+
+  const handleStatusChange = async (billingId, status) => {
+    setMessage('');
+    try {
+      const token = getToken();
+      const updated = await apiPatch(`/billing/${billingId}`, { status }, token);
+      setInvoices((prev) => prev.map((item) => (item._id === billingId ? updated : item)));
+      setMessage('Billing status updated.');
+    } catch (err) {
+      setMessage('Unable to update billing status.');
+    }
+  };
+
+  const downloadInvoice = async (id) => {
+    try {
+      const token = getToken();
+      const blob = await apiGetBlob(`/billing/${id}/pdf`, token);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setMessage('Unable to download invoice.');
     }
   };
 
@@ -78,6 +107,7 @@ const Billing = () => {
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Method</th>
+                <th>Download</th>
               </tr>
             </thead>
             <tbody>
@@ -85,8 +115,22 @@ const Billing = () => {
                 <tr key={invoice._id || invoice.id}>
                   <td>{invoice.patientId?.name || invoice.patientId || '—'}</td>
                   <td>₹{invoice.amount}</td>
-                  <td>{invoice.status}</td>
+                  <td>
+                    <select
+                      value={invoice.status}
+                      onChange={(e) => handleStatusChange(invoice._id, e.target.value)}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </td>
                   <td>{invoice.paymentMethod || '—'}</td>
+                  <td>
+                    <button type="button" className="btn secondary" onClick={() => downloadInvoice(invoice._id || invoice.id)}>
+                      PDF
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -42,3 +42,21 @@ exports.getAppointments = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.updateAppointment = async (req, res, next) => {
+  try {
+    const updates = req.body;
+    const appointment = await Appointment.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found.' });
+    }
+
+    res.status(200).json(appointment);
+  } catch (error) {
+    next(error);
+  }
+};
