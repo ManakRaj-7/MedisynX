@@ -4,7 +4,7 @@ import { getToken, setUser } from '../utils/auth';
 import { 
   User, Mail, Phone, Award, Building, FileText, 
   Shield, CheckCircle, Save, Camera, 
-  Cpu, MessageSquare, Info, Clock
+  Cpu, MessageSquare, Info, Clock, Lock
 } from 'lucide-react';
 
 const Profile = () => {
@@ -358,23 +358,119 @@ const Profile = () => {
               <div className="form-grid">
                 <div className="card-header">
                   <h2><Shield size={20} /> Security & Privacy</h2>
+                  <div className="badge badge-success"><CheckCircle size={12} /> Verified Account</div>
                 </div>
                 
-                <div className="input-group">
-                  <label>Password</label>
-                  <button type="button" className="btn btn-ghost" style={{ justifyContent: 'flex-start', border: '1px solid var(--border)' }}>
-                    <Shield size={18} /> Request Password Reset
+                <div style={{ display: 'grid', gap: '1.25rem' }}>
+                  <div className="input-group">
+                    <label>Current Password</label>
+                    <div className="input-wrapper">
+                      <Shield size={18} />
+                      <input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        id="currentPassword"
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="layout-2col-equal">
+                    <div className="input-group">
+                      <label>New Password</label>
+                      <div className="input-wrapper">
+                        <Lock size={18} />
+                        <input 
+                          type="password" 
+                          placeholder="New password" 
+                          id="newPassword"
+                          required 
+                        />
+                      </div>
+                    </div>
+                    <div className="input-group">
+                      <label>Confirm New Password</label>
+                      <div className="input-wrapper">
+                        <Lock size={18} />
+                        <input 
+                          type="password" 
+                          placeholder="Confirm new password" 
+                          id="confirmPassword"
+                          required 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    style={{ justifyContent: 'center' }}
+                    onClick={async () => {
+                      const currentPassword = document.getElementById('currentPassword').value;
+                      const newPassword = document.getElementById('newPassword').value;
+                      const confirmPassword = document.getElementById('confirmPassword').value;
+
+                      if (!currentPassword || !newPassword) {
+                        setMessage({ text: 'Please fill in all password fields.', type: 'error' });
+                        return;
+                      }
+
+                      if (newPassword !== confirmPassword) {
+                        setMessage({ text: 'New passwords do not match.', type: 'error' });
+                        return;
+                      }
+
+                      setIsSaving(true);
+                      try {
+                        const token = getToken();
+                        const response = await fetch('http://localhost:5000/api/v1/auth/change-password', {
+                          method: 'PUT',
+                          headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` 
+                          },
+                          body: JSON.stringify({ currentPassword, newPassword })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                          setMessage({ text: 'Password changed successfully!', type: 'success' });
+                          document.getElementById('currentPassword').value = '';
+                          document.getElementById('newPassword').value = '';
+                          document.getElementById('confirmPassword').value = '';
+                        } else {
+                          setMessage({ text: data.message || 'Change failed.', type: 'error' });
+                        }
+                      } catch {
+                        setMessage({ text: 'Server error.', type: 'error' });
+                      } finally {
+                        setIsSaving(false);
+                      }
+                    }}
+                  >
+                    Update Password
                   </button>
                 </div>
 
-                <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)' }}>
+                <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)', marginTop: '1rem' }}>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
                     <Info size={24} style={{ color: 'var(--warning)', flexShrink: 0 }} />
-                    <div>
-                      <h4 style={{ marginBottom: '0.5rem' }}>Data Privacy Compliance</h4>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-2)' }}>
-                        MedisynX uses end-to-end encryption for patient data. As a doctor, you are responsible for maintaining HIPAA/GDPR standards within your clinical workflow.
-                      </p>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ marginBottom: '0.5rem' }}>Data Privacy & Account Info</h4>
+                      <div style={{ display: 'grid', gap: '0.5rem', fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-2)' }}>Member Since:</span>
+                          <span>{new Date(profile.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-2)' }}>Account Status:</span>
+                          <span style={{ color: 'var(--success)' }}>Active (Verified)</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-2)' }}>Login Session:</span>
+                          <span>7 Days (Active)</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
