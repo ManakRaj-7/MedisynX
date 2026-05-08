@@ -22,7 +22,7 @@ const App = () => {
   return (
     <div className="app-shell">
       {!hideNav && <NavBar />}
-      <main className={hideNav ? '' : 'main-content'}>
+      <main className={hideNav ? 'auth-main' : 'main-content'}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />

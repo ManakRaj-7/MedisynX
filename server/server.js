@@ -21,20 +21,22 @@ const app = express();
 connectDB();
 
 // ──────────────── Security Middleware ────────────────
-app.use(helmet());
-app.use(mongoSanitize());
-app.use(hpp());
 
-// CORS - allow frontend
+// CORS - must be before other middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
 }));
 
+// Security headers (CSP disabled for dev compatibility with Vite)
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+// app.use(mongoSanitize());
+// app.use(hpp());
+
 // Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: 1000,
   message: { message: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -44,7 +46,7 @@ app.use('/api/', apiLimiter);
 // Stricter limiter for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 100,
   message: { message: 'Too many auth attempts, please try again later.' },
 });
 app.use('/api/v1/auth', authLimiter);
