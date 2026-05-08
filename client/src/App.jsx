@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -15,10 +15,21 @@ const Protected = ({ children }) => {
 };
 
 const App = () => {
+  const location = useLocation();
+  const hideNav = ['/login', '/signup', '/guest'].includes(location.pathname);
+
   return (
-    <div className="app-shell">
-      <NavBar />
-      <main className="app-content">
+    <div className="app-shell" style={{ display: hideNav ? 'block' : 'flex' }}>
+      {!hideNav && <NavBar />}
+      <main className="app-content" style={{ 
+        marginLeft: hideNav ? '0' : '260px',
+        padding: hideNav ? '0' : '3rem 4rem',
+        display: hideNav ? 'flex' : 'block',
+        alignItems: hideNav ? 'center' : 'initial',
+        justifyContent: hideNav ? 'center' : 'initial',
+        minHeight: '100vh',
+        width: hideNav ? '100%' : 'auto'
+      }}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />

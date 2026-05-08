@@ -12,9 +12,10 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^6.0.1",
+    "lucide-react": "latest",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-markdown": "latest",
     "react-router-dom": "^7.14.2"
   }
 }

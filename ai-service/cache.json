@@ -1,0 +1,22 @@
+{
+  "chest pain and shortness of breath|50|male": {
+    "source": "fallback",
+    "diagnosis": "Possible cardiac issue. This requires urgent medical evaluation.",
+    "advice": "Refer the patient to emergency care immediately and obtain ECG and cardiac enzyme tests.",
+    "cached": false
+  },
+  "cough and cold|23|male": {
+    "source": "fallback",
+    "diagnosis": "The AI service is unavailable. Use clinical judgment and consult a physician.",
+    "advice": "Please retry later or use the fallback evaluation guidance in the app.",
+    "error": "Gemini API request failed: 404 ",
+    "cached": false
+  },
+  "h|unknown|male": {
+    "source": "fallback",
+    "diagnosis": "The AI service is unavailable. Use clinical judgment and consult a physician.",
+    "advice": "Please retry later or use the fallback evaluation guidance in the app.",
+    "error": "Gemini API request failed: 404 ",
+    "cached": false
+  }
+}
