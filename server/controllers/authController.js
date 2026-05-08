@@ -99,12 +99,75 @@ exports.refreshToken = async (req, res, next) => {
   }
 };
 
+const multer = require('multer');
+const sharp = require('sharp');
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only images are allowed'), false);
+  }
+});
+
+exports.uploadAvatar = [
+  upload.single('avatar'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+      // Compress and resize using sharp
+      const compressedBuffer = await sharp(req.file.buffer)
+        .resize(200, 200, { fit: 'cover' })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      const base64Image = `data:image/webp;base64,${compressedBuffer.toString('base64')}`;
+
+      const doctor = await Doctor.findByIdAndUpdate(
+        req.user.id,
+        { profileImage: base64Image, avatarId: '' },
+        { new: true }
+      ).select('-password');
+
+      res.status(200).json(doctor);
+    } catch (error) {
+      next(error);
+    }
+  }
+];
+
 exports.getMe = async (req, res, next) => {
   try {
     const doctor = await Doctor.findById(req.user.id).select('-password');
     if (!doctor) {
       return res.status(404).json({ message: 'User not found.' });
     }
+    res.status(200).json(doctor);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateMe = async (req, res, next) => {
+  try {
+    const updates = req.body;
+    
+    // Don't allow password update here
+    delete updates.password;
+    delete updates.email;
+
+    const doctor = await Doctor.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    }).select('-password');
+
+    if (!doctor) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
     res.status(200).json(doctor);
   } catch (error) {
     next(error);

@@ -9,6 +9,7 @@ import Patients from './pages/Patients';
 import Appointments from './pages/Appointments';
 import Billing from './pages/Billing';
 import AIAssistant from './pages/AIAssistant';
+import Profile from './pages/Profile';
 import { isAuthenticated } from './utils/auth';
 import { Sun, Moon } from 'lucide-react';
 
@@ -74,6 +75,7 @@ const App = () => {
           <Route path="/appointments" element={<Protected><Appointments /></Protected>} />
           <Route path="/billing" element={<Protected><Billing /></Protected>} />
           <Route path="/ai-assistant" element={<Protected><AIAssistant /></Protected>} />
+          <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </main>

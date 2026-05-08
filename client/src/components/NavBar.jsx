@@ -52,8 +52,20 @@ const NavBar = () => {
       <div className="sidebar-bottom">
         {auth ? (
           <>
-            <div className="sidebar-user">
-              <div className="sidebar-user-avatar">{initials}</div>
+            <div 
+              className="sidebar-user" 
+              onClick={() => navigate('/profile')}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="sidebar-user-avatar">
+                {user?.profileImage ? (
+                  <img src={user.profileImage} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                ) : user?.avatarId ? (
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.avatarId}&backgroundColor=b6e3f4,c0aede,d1d4f9`} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                ) : (
+                  initials
+                )}
+              </div>
               <div className="sidebar-user-info">
                 <div className="name">{user?.name || 'Doctor'}</div>
                 <div className="role">{user?.specialization || 'Clinician'}</div>
