@@ -1,32 +1,32 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { logout, isAuthenticated } from '../utils/auth';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  CreditCard, 
-  Bot, 
-  LogOut, 
-  LogIn,
-  UserCircle
+import { logout, isAuthenticated, getUser } from '../utils/auth';
+import {
+  LayoutDashboard, Users, Calendar, CreditCard, Bot,
+  LogOut, LogIn, UserCircle
 } from 'lucide-react';
 
 const NavBar = () => {
   const navigate = useNavigate();
   const auth = isAuthenticated();
+  const user = getUser();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'DR';
+
   return (
-    <nav className="nav-bar">
-      <div className="brand">
+    <nav className="sidebar">
+      <div className="sidebar-logo">
+        <div className="logo-dot"></div>
         <span>MedisynX</span>
       </div>
-      
-      <div className="nav-links">
+
+      <div className="sidebar-nav">
         <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>
           <LayoutDashboard size={20} />
           <span>Dashboard</span>
@@ -49,22 +49,25 @@ const NavBar = () => {
         </NavLink>
       </div>
 
-      <div className="nav-actions">
+      <div className="sidebar-bottom">
         {auth ? (
           <>
-            <div className="nav-profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>
-              <UserCircle size={20} />
-              <span>Dr. Smith</span>
+            <div className="sidebar-user">
+              <div className="sidebar-user-avatar">{initials}</div>
+              <div className="sidebar-user-info">
+                <div className="name">{user?.name || 'Doctor'}</div>
+                <div className="role">{user?.specialization || 'Clinician'}</div>
+              </div>
             </div>
-            <button className="btn secondary" onClick={handleLogout} style={{ width: '100%', justifyContent: 'flex-start' }}>
+            <button onClick={handleLogout}>
               <LogOut size={20} />
-              <span>Logout</span>
+              <span>Sign Out</span>
             </button>
           </>
         ) : (
-          <NavLink className="btn primary" to="/login" style={{ width: '100%' }}>
+          <NavLink to="/login" className="btn btn-primary btn-full">
             <LogIn size={20} />
-            <span>Login</span>
+            <span>Sign In</span>
           </NavLink>
         )}
       </div>

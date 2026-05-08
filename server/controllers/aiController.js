@@ -1,4 +1,4 @@
-const diagnosisService = require('../../ai-service/diagnosisService');
+const diagnosisService = require('../ai-service/diagnosisService');
 
 exports.diagnose = async (req, res, next) => {
   try {
