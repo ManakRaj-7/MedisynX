@@ -2,13 +2,28 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { logout, isAuthenticated, getUser } from '../utils/auth';
 import {
   LayoutDashboard, Users, Calendar, CreditCard, Bot,
-  LogOut, LogIn, UserCircle
+  LogOut, LogIn, UserCircle, Download
 } from 'lucide-react';
 
 const NavBar = () => {
   const navigate = useNavigate();
   const auth = isAuthenticated();
   const user = getUser();
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setDeferredPrompt(null);
+  };
 
   const handleLogout = () => {
     logout();
@@ -51,6 +66,21 @@ const NavBar = () => {
           <UserCircle size={20} />
           <span>My Profile</span>
         </NavLink>
+        {deferredPrompt && (
+          <button 
+            onClick={handleInstall} 
+            className="btn btn-ghost" 
+            style={{ 
+              marginTop: '1rem', 
+              color: 'var(--primary)', 
+              borderColor: 'var(--primary-glow)',
+              background: 'rgba(6, 182, 212, 0.05)'
+            }}
+          >
+            <Download size={18} />
+            <span>Install Desktop App</span>
+          </button>
+        )}
       </div>
 
       <div className="sidebar-bottom">
