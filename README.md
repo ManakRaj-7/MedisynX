@@ -1,14 +1,21 @@
 # 🏥 MedisynX — AI-Powered Healthcare Ecosystem
 
 <p align="center">
-  <img src="https://img.shields.io/badge/MedisynX-v2.0-00d4ff?style=for-the-badge&labelColor=0f172a" />
+  <a href="https://medisyn-x.vercel.app">
+    <img src="https://img.shields.io/badge/Live%20Demo-MedisynX-06b6d4?style=for-the-badge&logo=vercel&labelColor=0f172a" />
+  </a>
+  <img src="https://img.shields.io/badge/MedisynX-v2.5-00d4ff?style=for-the-badge&labelColor=0f172a" />
   <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-8b5cf6?style=for-the-badge&labelColor=0f172a" />
-  <img src="https://img.shields.io/badge/Stack-MERN-10b981?style=for-the-badge&labelColor=0f172a" />
-  <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-f59e0b?style=for-the-badge&labelColor=0f172a" />
-  <img src="https://img.shields.io/badge/Security-Helmet%20%2B%20Rate%20Limiting-ef4444?style=for-the-badge&labelColor=0f172a" />
 </p>
 
-> **Enterprise-grade AI healthcare platform** built with MERN stack, Gemini 2.5 Flash, JWT authentication, production security middleware, and a premium glassmorphism UI.
+> **Industry-grade AI medical SaaS platform** featuring a comprehensive Doctor Dashboard, MERN stack architecture, Gemini 2.5 Flash clinical insights, and a secure, installable PWA experience.
+
+---
+
+### 🌐 Live Deployment
+*   **Frontend**: [https://medisyn-x.vercel.app](https://medisyn-x.vercel.app) (Hosted on **Vercel**)
+*   **Backend**: Hosted on **Render** (Auto-scaling Node.js API)
+*   **Database**: MongoDB Atlas (Cloud-native NoSQL)
 
 ---
 
@@ -57,12 +64,19 @@
 
 ### 🎨 Premium UI/UX
 - **Glassmorphism** design system with backdrop blur
+- **Progressive Web App (PWA)** — Installable on Desktop/Mobile with offline caching
 - **Modern typography** — Outfit (headings) + Inter (body)
 - Dark mode with sapphire/cyan/violet palette
 - Persistent sidebar navigation with active states
 - Responsive layout (desktop → tablet → mobile)
 - Loading skeletons, empty states, error alerts
 - Micro-animations and hover effects
+
+### 🩺 Doctor Profile & Preferences
+- **Professional Identity** — Medical license, qualification, and hospital affiliation management
+- **Avatar System** — Professional presets or compressed image uploads (WebP optimized)
+- **AI Personalization** — Control Gemini model (Flash/Pro), response styles, and confidence thresholds
+- **Security Hub** — Active session tracking and secure password management
 
 ---
 
