@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiGetBlob, apiPost, apiPatch } from '../api/api';
 import { getToken } from '../utils/auth';
-import { Plus, Download, IndianRupee, AlertCircle } from 'lucide-react';
+import { Plus, Download, IndianRupee, AlertCircle, Edit2, X } from 'lucide-react';
 
 const Billing = () => {
   const [invoices, setInvoices] = useState([]);
   const [patients, setPatients] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ patientId: '', amount: '', description: '', paymentMethod: 'Cash' });
+  const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(true);
 
@@ -29,29 +30,61 @@ const Billing = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleEdit = (inv) => {
+    setEditingId(inv._id);
+    setForm({
+      patientId: inv.patientId?._id || '',
+      amount: inv.amount || '',
+      description: inv.description || '',
+      paymentMethod: inv.paymentMethod || 'Cash'
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm({ patientId: '', amount: '', description: '', paymentMethod: 'Cash' });
+    setShowForm(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
     try {
       const token = getToken();
-      const result = await apiPost('/billing', form, token);
-      if (result._id) {
-        setInvoices([result, ...invoices]);
-        setForm({ patientId: '', amount: '', description: '', paymentMethod: 'Cash' });
-        setShowForm(false);
-        setMessage({ text: 'Invoice created.', type: 'success' });
+      if (editingId) {
+        const updated = await apiPatch(`/billing/${editingId}`, form, token);
+        if (updated._id) {
+          // Re-populate patient info for display since API might only return ID
+          const updatedWithPatient = { ...updated, patientId: patients.find(p => p._id === updated.patientId) || updated.patientId };
+          setInvoices(invoices.map(i => i._id === editingId ? updatedWithPatient : i));
+          setMessage({ text: 'Invoice updated successfully.', type: 'success' });
+          cancelEdit();
+        } else {
+          setMessage({ text: updated.message || 'Failed to update invoice.', type: 'error' });
+        }
       } else {
-        setMessage({ text: result.message || 'Failed.', type: 'error' });
+        const result = await apiPost('/billing', form, token);
+        if (result._id) {
+          // Re-populate patient info for display
+          const resultWithPatient = { ...result, patientId: patients.find(p => p._id === result.patientId) || result.patientId };
+          setInvoices([resultWithPatient, ...invoices]);
+          setMessage({ text: 'Invoice created.', type: 'success' });
+          cancelEdit();
+        } else {
+          setMessage({ text: result.message || 'Failed.', type: 'error' });
+        }
       }
-    } catch { setMessage({ text: 'Failed to create invoice.', type: 'error' }); }
+    } catch { setMessage({ text: 'Operation failed.', type: 'error' }); }
   };
 
   const handleStatus = async (id, status) => {
     try {
       const token = getToken();
       const updated = await apiPatch(`/billing/${id}`, { status }, token);
-      setInvoices(prev => prev.map(i => i._id === id ? updated : i));
-    } catch { setMessage({ text: 'Failed to update.', type: 'error' }); }
+      setInvoices(prev => prev.map(i => i._id === id ? { ...updated, patientId: prev.find(p => p._id === id).patientId } : i));
+    } catch { setMessage({ text: 'Failed to update status.', type: 'error' }); }
   };
 
   const downloadPdf = async (id) => {
@@ -69,13 +102,7 @@ const Billing = () => {
     } catch { setMessage({ text: 'Failed to download PDF.', type: 'error' }); }
   };
 
-  const statusBadge = (s) => {
-    if (s === 'Paid') return 'badge-success';
-    if (s === 'Cancelled') return 'badge-danger';
-    return 'badge-warning';
-  };
-
-  const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (i.amount || 0), 0);
+  const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
   return (
     <>
@@ -98,16 +125,16 @@ const Billing = () => {
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          <Plus size={18} /> {showForm ? 'Cancel' : 'New Invoice'}
+        <button className={`btn ${showForm ? 'btn-ghost' : 'btn-primary'}`} onClick={() => showForm ? cancelEdit() : setShowForm(true)}>
+          {showForm ? <><X size={18} /> Cancel</> : <><Plus size={18} /> New Invoice</>}
         </button>
       </div>
 
       {message.text && <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>{message.text}</div>}
 
       {showForm && (
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1.25rem' }}>Create Invoice</h3>
+        <div className="card" style={{ marginBottom: '1.5rem', border: editingId ? '1px solid var(--primary)' : '1px solid var(--border)' }}>
+          <h3 style={{ marginBottom: '1.25rem' }}>{editingId ? 'Edit Invoice' : 'Create Invoice'}</h3>
           <form onSubmit={handleSubmit} className="form-grid">
             <div className="layout-2col-equal">
               <div className="input-group">
@@ -138,7 +165,10 @@ const Billing = () => {
                 </div>
               </div>
             </div>
-            <button type="submit" className="btn btn-primary">Create Invoice</button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="btn btn-primary">{editingId ? 'Update Invoice' : 'Create Invoice'}</button>
+              {editingId && <button type="button" className="btn btn-ghost" onClick={cancelEdit}>Cancel Edit</button>}
+            </div>
           </form>
         </div>
       )}
@@ -156,12 +186,12 @@ const Billing = () => {
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Patient</th><th>Amount</th><th>Description</th><th>Status</th><th>Method</th><th>PDF</th></tr></thead>
+              <thead><tr><th>Patient</th><th>Amount</th><th>Description</th><th>Status</th><th>Method</th><th>Action</th></tr></thead>
               <tbody>
                 {invoices.map(inv => (
                   <tr key={inv._id}>
                     <td style={{ fontWeight: 600, color: 'var(--text-0)' }}>{inv.patientId?.name || '—'}</td>
-                    <td>₹{inv.amount?.toLocaleString()}</td>
+                    <td>₹{Number(inv.amount)?.toLocaleString()}</td>
                     <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.description || '—'}</td>
                     <td>
                       <select className="inline-select" value={inv.status} onChange={(e) => handleStatus(inv._id, e.target.value)}>
@@ -169,7 +199,12 @@ const Billing = () => {
                       </select>
                     </td>
                     <td>{inv.paymentMethod || '—'}</td>
-                    <td><button className="btn btn-ghost btn-sm" onClick={() => downloadPdf(inv._id)}><Download size={14} /> PDF</button></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleEdit(inv)} title="Edit Invoice"><Edit2 size={14} /></button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => downloadPdf(inv._id)} title="Download PDF"><Download size={14} /> PDF</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

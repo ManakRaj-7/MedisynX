@@ -56,3 +56,29 @@ exports.getPatientById = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.updatePatient = async (req, res, next) => {
+  try {
+    const updates = req.body;
+    // Don't allow phone update if it clashes with another patient
+    if (updates.phone) {
+      const existing = await Patient.findOne({ phone: updates.phone, _id: { $ne: req.params.id } });
+      if (existing) {
+        return res.status(409).json({ message: 'Another patient already has this phone number.' });
+      }
+    }
+
+    const patient = await Patient.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found.' });
+    }
+
+    res.status(200).json(patient);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPatch } from '../api/api';
 import { getToken, getUser } from '../utils/auth';
-import { CalendarPlus, Clock } from 'lucide-react';
+import { CalendarPlus, Clock, Edit2, X, Calendar } from 'lucide-react';
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ patientId: '', appointmentDate: '', symptoms: '' });
+  const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(true);
   const user = getUser();
@@ -30,30 +31,64 @@ const Appointments = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleEdit = (a) => {
+    setEditingId(a._id);
+    // Convert date for datetime-local input
+    const date = new Date(a.appointmentDate);
+    const formattedDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    
+    setForm({
+      patientId: a.patientId?._id || '',
+      appointmentDate: formattedDate,
+      symptoms: a.symptoms || ''
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm({ patientId: '', appointmentDate: '', symptoms: '' });
+    setShowForm(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
     try {
       const token = getToken();
-      const payload = { ...form, doctorId: user?._id || 'self' };
-      const result = await apiPost('/appointments', payload, token);
-      if (result._id) {
-        setAppointments([result, ...appointments]);
-        setForm({ patientId: '', appointmentDate: '', symptoms: '' });
-        setShowForm(false);
-        setMessage({ text: 'Appointment scheduled.', type: 'success' });
+      if (editingId) {
+        const updated = await apiPatch(`/appointments/${editingId}`, form, token);
+        if (updated._id) {
+          // Re-populate patient info for display
+          const updatedWithPatient = { ...updated, patientId: patients.find(p => p._id === updated.patientId) || updated.patientId };
+          setAppointments(appointments.map(a => a._id === editingId ? updatedWithPatient : a));
+          setMessage({ text: 'Appointment updated.', type: 'success' });
+          cancelEdit();
+        } else {
+          setMessage({ text: updated.message || 'Update failed.', type: 'error' });
+        }
       } else {
-        setMessage({ text: result.message || 'Failed.', type: 'error' });
+        const payload = { ...form, doctorId: user?._id || 'self' };
+        const result = await apiPost('/appointments', payload, token);
+        if (result._id) {
+          const resultWithPatient = { ...result, patientId: patients.find(p => p._id === result.patientId) || result.patientId };
+          setAppointments([resultWithPatient, ...appointments]);
+          setMessage({ text: 'Appointment scheduled.', type: 'success' });
+          cancelEdit();
+        } else {
+          setMessage({ text: result.message || 'Failed.', type: 'error' });
+        }
       }
-    } catch { setMessage({ text: 'Failed to create appointment.', type: 'error' }); }
+    } catch { setMessage({ text: 'Operation failed.', type: 'error' }); }
   };
 
   const handleStatus = async (id, status) => {
     try {
       const token = getToken();
       const updated = await apiPatch(`/appointments/${id}`, { status }, token);
-      setAppointments(prev => prev.map(a => a._id === id ? updated : a));
-    } catch { setMessage({ text: 'Failed to update.', type: 'error' }); }
+      setAppointments(prev => prev.map(a => a._id === id ? { ...updated, patientId: prev.find(ap => ap._id === id).patientId } : a));
+    } catch { setMessage({ text: 'Failed to update status.', type: 'error' }); }
   };
 
   const statusBadge = (s) => {
@@ -70,16 +105,16 @@ const Appointments = () => {
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          <CalendarPlus size={18} /> {showForm ? 'Cancel' : 'New Appointment'}
+        <button className={`btn ${showForm ? 'btn-ghost' : 'btn-primary'}`} onClick={() => showForm ? cancelEdit() : setShowForm(true)}>
+          {showForm ? <><X size={18} /> Cancel</> : <><CalendarPlus size={18} /> New Appointment</>}
         </button>
       </div>
 
       {message.text && <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>{message.text}</div>}
 
       {showForm && (
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1.25rem' }}>Schedule Appointment</h3>
+        <div className="card" style={{ marginBottom: '1.5rem', border: editingId ? '1px solid var(--primary)' : '1px solid var(--border)' }}>
+          <h3 style={{ marginBottom: '1.25rem' }}>{editingId ? 'Edit Appointment' : 'Schedule Appointment'}</h3>
           <form onSubmit={handleSubmit} className="form-grid">
             <div className="layout-2col-equal">
               <div className="input-group">
@@ -103,7 +138,10 @@ const Appointments = () => {
               <label>Symptoms (optional)</label>
               <div className="input-wrapper"><textarea name="symptoms" value={form.symptoms} onChange={handleChange} placeholder="Describe symptoms..." /></div>
             </div>
-            <button type="submit" className="btn btn-primary">Schedule</button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="btn btn-primary">{editingId ? 'Update Appointment' : 'Schedule'}</button>
+              {editingId && <button type="button" className="btn btn-ghost" onClick={cancelEdit}>Cancel Edit</button>}
+            </div>
           </form>
         </div>
       )}
@@ -130,11 +168,14 @@ const Appointments = () => {
                     <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.symptoms || '—'}</td>
                     <td><span className={`badge ${statusBadge(a.status)}`}>{a.status}</span></td>
                     <td>
-                      <select className="inline-select" value={a.status} onChange={(e) => handleStatus(a._id, e.target.value)}>
-                        <option value="Scheduled">Scheduled</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <select className="inline-select" value={a.status} onChange={(e) => handleStatus(a._id, e.target.value)}>
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleEdit(a)} title="Edit Appointment"><Edit2 size={14} /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}
