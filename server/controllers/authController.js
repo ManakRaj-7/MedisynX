@@ -98,3 +98,15 @@ exports.refreshToken = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getMe = async (req, res, next) => {
+  try {
+    const doctor = await Doctor.findById(req.user.id).select('-password');
+    if (!doctor) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.status(200).json(doctor);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 require('dotenv').config();
+
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const patientRoutes = require('./routes/patients');
@@ -15,11 +20,39 @@ const app = express();
 // Connect to Database
 connectDB();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// ──────────────── Security Middleware ────────────────
+app.use(helmet());
+app.use(mongoSanitize());
+app.use(hpp());
 
-// API routes
+// CORS - allow frontend
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200,
+  message: { message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+
+// Stricter limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { message: 'Too many auth attempts, please try again later.' },
+});
+app.use('/api/v1/auth', authLimiter);
+
+// Body parser
+app.use(express.json({ limit: '10kb' }));
+
+// ──────────────── API Routes ────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/appointments', appointmentRoutes);
@@ -27,12 +60,18 @@ app.use('/api/v1/billing', billingRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/demo', demoRoutes);
 
-// Health check route
+// Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'MedisynX API is running...' });
+  res.json({
+    status: 'healthy',
+    app: 'MedisynX API',
+    version: '2.0.0',
+    security: ['helmet', 'rate-limit', 'mongo-sanitize', 'hpp'],
+    ai: 'Gemini 2.5 Flash',
+  });
 });
 
-// 404 handler
+// 404
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });
 });
@@ -42,7 +81,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`MedisynX API running on port ${PORT}`);
 });
 
 module.exports = app;

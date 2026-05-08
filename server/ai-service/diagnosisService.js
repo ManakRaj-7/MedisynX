@@ -40,24 +40,27 @@ const fallbackDiagnosis = (symptoms) => {
   if (text.includes('fever') && text.includes('cough')) {
     return {
       source: 'fallback',
-      diagnosis: 'Likely viral illness such as flu or common cold. Recommend rest, fluids, and monitoring for worsening symptoms.',
-      advice: 'If symptoms persist more than 3 days or breathing difficulty develops, seek medical evaluation.',
+      content: '### Potential Assessment\nLikely viral illness such as flu or common cold.\n\n### Recommended Next Steps\n- Rest, fluids, and monitoring\n- If symptoms persist >3 days, escalate',
+      confidence: 65,
+      disclaimer: 'Fallback analysis — AI service was unavailable.',
     };
   }
 
   if (text.includes('chest pain') || text.includes('pressure in chest') || text.includes('shortness of breath')) {
     return {
       source: 'fallback',
-      diagnosis: 'Possible cardiac issue. This requires urgent medical evaluation.',
-      advice: 'Refer the patient to emergency care immediately and obtain ECG and cardiac enzyme tests.',
+      content: '### ⚠️ URGENT — Potential Cardiac Event\nChest pain/pressure requires immediate evaluation.\n\n### Recommended Next Steps\n- Refer to ER immediately\n- Obtain ECG and cardiac enzyme tests',
+      confidence: 85,
+      disclaimer: 'Fallback analysis — seek emergency care.',
     };
   }
 
   if (text.includes('headache') && text.includes('nausea')) {
     return {
       source: 'fallback',
-      diagnosis: 'Symptoms are consistent with migraine. Consider lifestyle triggers and pain management.',
-      advice: 'Recommend hydration, rest in a quiet dark room, and a migraine-specific analgesic if appropriate.',
+      content: '### Potential Assessment\nSymptoms consistent with migraine.\n\n### Recommended Next Steps\n- Hydration, rest in a quiet dark room\n- Consider migraine-specific analgesic',
+      confidence: 60,
+      disclaimer: 'Fallback analysis — AI service was unavailable.',
     };
   }
 
@@ -72,38 +75,57 @@ const callGeminiAPI = async (payload) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const prompt = `
-    You are MedisynX AI, a highly advanced clinical decision support assistant. 
-    Analyze the following patient data and provide a professional, structured medical insight.
-    
-    PATIENT DATA:
-    - Symptoms: ${payload.symptoms}
-    - Age: ${payload.age || 'unknown'}
-    - Gender: ${payload.gender || 'unknown'}
-    - Medical History: ${payload.history || 'none'}
-    
-    RESPONSE FORMAT (Markdown):
-    ### Potential Assessment
-    [Brief overview of what these symptoms might indicate]
-    
-    ### Key Considerations
-    - [List 2-3 important clinical points]
-    
-    ### Recommended Next Steps
-    - [List 2-3 actionable steps for the clinician]
-    
-    ### Warning Signs
-    - [List urgent symptoms that require immediate ER attention]
-    
-    Keep the tone professional and concise. Always include a disclaimer that this is an AI-assisted insight and not a final diagnosis.
-  `;
+  const prompt = `You are MedisynX AI, an advanced clinical decision support system.
+Analyze the patient data below and return a structured medical insight in Markdown.
+
+PATIENT DATA:
+- Symptoms: ${payload.symptoms}
+- Age: ${payload.age || 'Not provided'}
+- Gender: ${payload.gender || 'Not provided'}
+- Medical History: ${payload.history || 'None reported'}
+
+RESPONSE FORMAT (use exactly these headers):
+
+### 🔍 Potential Assessment
+[2-3 sentences on what these symptoms might indicate, including differential diagnoses]
+
+### 📊 Confidence Level
+[State a confidence percentage 0-100% and briefly explain why]
+
+### 🔬 Key Considerations
+- [List 3-4 important clinical points the doctor should consider]
+
+### 📋 Recommended Tests
+- [List 2-3 specific diagnostic tests or examinations]
+
+### 💊 Suggested Next Steps
+- [List 2-3 actionable clinical steps]
+
+### ⚠️ Red Flags
+- [List symptoms that would require immediate emergency attention]
+
+### 🍎 Lifestyle & Diet Recommendations
+- [List 2-3 diet/lifestyle suggestions relevant to the condition]
+
+Keep the response professional, evidence-informed, and concise.
+End with: *"⚕️ This is an AI-assisted clinical insight and must be validated by a licensed healthcare professional before any clinical decision."*`;
 
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text();
+    const text = response.text();
+
+    // Try to extract confidence from the AI's response
+    let confidence = 75; // default
+    const confMatch = text.match(/(\d{1,3})\s*%/);
+    if (confMatch) {
+      const parsed = parseInt(confMatch[1]);
+      if (parsed >= 0 && parsed <= 100) confidence = parsed;
+    }
+
+    return { text, confidence };
   } catch (error) {
-    console.error('Gemini API Error:', error);
+    console.error('Gemini API Error:', error.message);
     throw new Error('Failed to generate medical insight from AI service.');
   }
 };
@@ -120,15 +142,13 @@ const getDiagnosis = async (payload) => {
     return { ...cache[cacheKey], cached: true };
   }
 
-  // We still keep fallback for quick matches or offline-like behavior
-  // but we prefer AI for more complex queries
-  
   try {
-    const diagnosisText = await callGeminiAPI(payload);
+    const { text, confidence } = await callGeminiAPI(payload);
     const result = {
       source: 'gemini-2.5-flash',
-      content: diagnosisText,
-      disclaimer: 'This insight is generated by AI and should be reviewed by a qualified healthcare professional.',
+      content: text,
+      confidence,
+      disclaimer: 'This insight is generated by AI and must be reviewed by a qualified healthcare professional before any clinical decision.',
       timestamp: new Date().toISOString(),
       cached: false,
     };
@@ -138,12 +158,13 @@ const getDiagnosis = async (payload) => {
   } catch (error) {
     const fallback = fallbackDiagnosis(payload.symptoms);
     if (fallback) {
-      return { ...fallback, cached: false, source: 'fallback' };
+      return { ...fallback, cached: false };
     }
-    
+
     return {
       source: 'error-handler',
-      content: 'The AI service is currently experiencing high load. Please use clinical judgment.',
+      content: '### Service Unavailable\nThe AI service is currently experiencing high load. Please rely on clinical judgment and try again later.',
+      confidence: 0,
       disclaimer: 'AI service unavailable.',
       error: error.message,
       cached: false,
