@@ -3,8 +3,8 @@ import { apiGet, apiPut } from '../api/api';
 import { getToken, setUser } from '../utils/auth';
 import { 
   User, Mail, Phone, Award, Building, FileText, 
-  Settings, Shield, CheckCircle, Save, Camera, 
-  Cpu, Zap, MessageSquare, Info
+  Shield, CheckCircle, Save, Camera, 
+  Cpu, MessageSquare, Info, Clock
 } from 'lucide-react';
 
 const Profile = () => {

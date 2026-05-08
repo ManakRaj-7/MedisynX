@@ -47,6 +47,10 @@ const NavBar = () => {
           <Bot size={20} />
           <span>AI Assistant</span>
         </NavLink>
+        <NavLink to="/profile" className={({ isActive }) => isActive ? 'active' : ''}>
+          <UserCircle size={20} />
+          <span>My Profile</span>
+        </NavLink>
       </div>
 
       <div className="sidebar-bottom">
@@ -71,8 +75,19 @@ const NavBar = () => {
                 <div className="role">{user?.specialization || 'Clinician'}</div>
               </div>
             </div>
-            <button onClick={handleLogout}>
-              <LogOut size={20} />
+            <button 
+              onClick={handleLogout} 
+              className="btn btn-ghost"
+              style={{ 
+                marginTop: '0.75rem', 
+                width: '100%', 
+                justifyContent: 'flex-start',
+                color: 'var(--danger)',
+                borderColor: 'rgba(239, 68, 68, 0.1)',
+                background: 'rgba(239, 68, 68, 0.05)'
+              }}
+            >
+              <LogOut size={18} />
               <span>Sign Out</span>
             </button>
           </>

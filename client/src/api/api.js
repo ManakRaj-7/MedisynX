@@ -49,3 +49,12 @@ export const apiPatch = async (path, body, token) => {
   });
   return response.json();
 };
+
+export const apiPut = async (path, body, token) => {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'PUT',
+    headers: createHeaders(token),
+    body: JSON.stringify(body),
+  });
+  return response.json();
+};
