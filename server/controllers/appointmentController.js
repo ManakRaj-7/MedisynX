@@ -2,10 +2,11 @@ const Appointment = require('../models/Appointment');
 
 exports.createAppointment = async (req, res, next) => {
   try {
-    const { patientId, doctorId, appointmentDate, symptoms, diagnosis, prescription, notes } = req.body;
+    const { patientId, appointmentDate, symptoms, diagnosis, prescription, notes } = req.body;
+    const doctorId = req.user.id;
 
-    if (!patientId || !doctorId || !appointmentDate) {
-      return res.status(400).json({ message: 'Patient, doctor, and date are required.' });
+    if (!patientId || !appointmentDate) {
+      return res.status(400).json({ message: 'Patient and date are required.' });
     }
 
     const appointment = await Appointment.create({
@@ -26,10 +27,10 @@ exports.createAppointment = async (req, res, next) => {
 
 exports.getAppointments = async (req, res, next) => {
   try {
-    const { doctorId, patientId } = req.query;
-    const query = {};
+    const doctorId = req.user.id;
+    const { patientId } = req.query;
+    const query = { doctorId };
 
-    if (doctorId) query.doctorId = doctorId;
     if (patientId) query.patientId = patientId;
 
     const appointments = await Appointment.find(query)
@@ -45,11 +46,17 @@ exports.getAppointments = async (req, res, next) => {
 
 exports.updateAppointment = async (req, res, next) => {
   try {
+    const doctorId = req.user.id;
     const updates = req.body;
-    const appointment = await Appointment.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+
+    // Don't allow doctorId to be changed
+    delete updates.doctorId;
+
+    const appointment = await Appointment.findOneAndUpdate(
+      { _id: req.params.id, doctorId },
+      updates,
+      { new: true, runValidators: true }
+    );
 
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found.' });

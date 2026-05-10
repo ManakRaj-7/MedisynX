@@ -4,6 +4,7 @@ const PDFDocument = require('pdfkit');
 exports.createBilling = async (req, res, next) => {
   try {
     const { patientId, appointmentId, amount, description, paymentMethod } = req.body;
+    const doctorId = req.user.id;
 
     if (!patientId || !amount) {
       return res.status(400).json({ message: 'Patient and amount are required.' });
@@ -11,6 +12,7 @@ exports.createBilling = async (req, res, next) => {
 
     const billing = await Billing.create({
       patientId,
+      doctorId,
       appointmentId,
       amount,
       description,
@@ -26,8 +28,9 @@ exports.createBilling = async (req, res, next) => {
 
 exports.getBillings = async (req, res, next) => {
   try {
+    const doctorId = req.user.id;
     const { patientId, status } = req.query;
-    const query = {};
+    const query = { doctorId };
 
     if (patientId) query.patientId = patientId;
     if (status) query.status = status;
@@ -45,11 +48,17 @@ exports.getBillings = async (req, res, next) => {
 
 exports.updateBilling = async (req, res, next) => {
   try {
+    const doctorId = req.user.id;
     const updates = req.body;
-    const billing = await Billing.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+
+    // Don't allow doctorId to be changed
+    delete updates.doctorId;
+
+    const billing = await Billing.findOneAndUpdate(
+      { _id: req.params.id, doctorId },
+      updates,
+      { new: true, runValidators: true }
+    );
 
     if (!billing) {
       return res.status(404).json({ message: 'Billing record not found.' });
@@ -63,7 +72,8 @@ exports.updateBilling = async (req, res, next) => {
 
 exports.getBillingPdf = async (req, res, next) => {
   try {
-    const billing = await Billing.findById(req.params.id)
+    const doctorId = req.user.id;
+    const billing = await Billing.findOne({ _id: req.params.id, doctorId })
       .populate('patientId', 'name phone email')
       .populate('appointmentId', 'appointmentDate status');
 
