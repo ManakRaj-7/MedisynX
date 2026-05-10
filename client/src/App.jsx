@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import NavBar from './components/NavBar';
+import CommandPalette from './components/CommandPalette';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import GuestDemo from './pages/GuestDemo';
@@ -45,6 +46,7 @@ const App = () => {
   return (
     <div className="app-shell">
       {!hideNav && <NavBar />}
+      {!hideNav && <CommandPalette />}
       
       {/* Floating Theme Toggle */}
       <button 

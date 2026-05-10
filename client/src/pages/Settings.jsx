@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Shield, Bell, Key, Moon, Sun } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Bell, Key, Moon, Sun, Command } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const Settings = () => {
@@ -98,6 +98,27 @@ const Settings = () => {
              </p>
           </div>
           <button className="btn btn-primary" style={{ marginTop: '1rem' }}>Save Settings</button>
+        </div>
+        <div className="card" style={{ marginTop: '2rem' }}>
+          <div className="card-header" style={{ marginBottom: '1rem' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Command size={20} color="var(--primary)" /> Keyboard Shortcuts
+            </h2>
+            <span className="badge badge-info">Pro Tip</span>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--bg-2)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <kbd style={{ background: 'var(--bg-1)', padding: '0.2rem 0.5rem', borderRadius: 4, border: '1px solid var(--border)', fontFamily: 'monospace', fontWeight: 600 }}>Ctrl</kbd>
+              <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>+</span>
+              <kbd style={{ background: 'var(--bg-1)', padding: '0.2rem 0.5rem', borderRadius: 4, border: '1px solid var(--border)', fontFamily: 'monospace', fontWeight: 600 }}>K</kbd>
+            </div>
+            <div style={{ flex: 1 }}>
+              <h4 style={{ margin: 0, color: 'var(--text-0)' }}>Command Palette</h4>
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-2)' }}>
+                Desktop users can instantly open a movable and resizable quick-action menu from anywhere in the app. Use it to rapidly jump between modules or sign out.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </>
