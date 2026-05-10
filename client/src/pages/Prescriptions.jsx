@@ -24,6 +24,9 @@ const Prescriptions = () => {
       medication: formData.medication,
       notes: formData.notes
     }, token).then(newRx => {
+      if (!newRx._id) {
+        throw new Error(newRx.message || 'Server returned invalid response');
+      }
       // Create local representation for instant UI update
       const rxWithDate = {
         _id: newRx._id,
@@ -38,8 +41,8 @@ const Prescriptions = () => {
       setFormData({ patientId: '', medication: '', notes: '' });
       setTimeout(() => setMessage(null), 3000);
     }).catch(err => {
-      setMessage({ type: 'error', text: 'Failed to save prescription to server.' });
-      setTimeout(() => setMessage(null), 3000);
+      setMessage({ type: 'error', text: 'Failed to save. Did you restart your backend server?' });
+      setTimeout(() => setMessage(null), 5000);
     });
   };
 
@@ -62,7 +65,7 @@ const Prescriptions = () => {
 
   return (
     <>
-      <div className="page-header">
+      <div className="page-header no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div className="stat-card-icon blue" style={{ width: 48, height: 48 }}><Pill size={28} /></div>
           <div>
@@ -75,7 +78,7 @@ const Prescriptions = () => {
         </button>
       </div>
 
-      <div className="layout-2col">
+      <div className="layout-2col no-print">
         <div className="card">
           <h3 style={{ marginBottom: '1rem' }}>Active Prescriptions</h3>
           {loading ? (
@@ -162,6 +165,42 @@ const Prescriptions = () => {
             </div>
           </form>
         </div>
+      </div>
+
+      {/* Professional PDF Print Template */}
+      <div className="print-only card" style={{ padding: '3rem', border: 'none', background: '#fff' }}>
+         <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '1rem', marginBottom: '2.5rem' }}>
+            <h1 style={{ margin: 0, color: '#000', fontSize: '2rem' }}>MedisynX Clinic</h1>
+            <p style={{ margin: 0, color: '#444', fontSize: '1.1rem' }}>Official Electronic Prescription</p>
+         </div>
+         
+         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3rem', fontSize: '1.2rem' }}>
+            <div>
+               <strong style={{ color: '#000' }}>Patient Name:</strong> {patients.find(p => p._id === formData.patientId)?.name || '___________________________'}
+            </div>
+            <div>
+               <strong style={{ color: '#000' }}>Date:</strong> {new Date().toLocaleDateString()}
+            </div>
+         </div>
+         
+         <div style={{ minHeight: '400px' }}>
+            <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', color: '#000' }}>Rx / Medication</h2>
+            <p style={{ whiteSpace: 'pre-wrap', fontSize: '1.3rem', marginTop: '1.5rem', color: '#000', lineHeight: 1.6 }}>
+               {formData.medication || '________________________________________________\n\n________________________________________________'}
+            </p>
+            
+            <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginTop: '3rem', color: '#000' }}>Additional Notes</h3>
+            <p style={{ whiteSpace: 'pre-wrap', marginTop: '1rem', color: '#000', fontSize: '1.1rem' }}>
+               {formData.notes || 'None'}
+            </p>
+         </div>
+         
+         <div style={{ marginTop: '5rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ textAlign: 'center' }}>
+               <p style={{ borderBottom: '1px solid #000', width: '250px', margin: '0 0 0.5rem 0' }}></p>
+               <p style={{ margin: 0, color: '#000', fontSize: '1.1rem' }}>Doctor's Signature</p>
+            </div>
+         </div>
       </div>
     </>
   );

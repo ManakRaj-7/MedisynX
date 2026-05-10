@@ -623,3 +623,31 @@ input:-webkit-autofill:active {
     z-index: 950 !important;
   }
 }
+
+/* ============ PRINT STYLES ============ */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .app-shell > :not(.main-content) { display: none !important; }
+  .mobile-header, .theme-toggle-btn, .sidebar, .sidebar-overlay { display: none !important; }
+  
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+  }
+
+  * {
+    color: black !important;
+    box-shadow: none !important;
+  }
+}
+
+.print-only { display: none; }
