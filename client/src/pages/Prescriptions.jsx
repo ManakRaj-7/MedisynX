@@ -8,6 +8,7 @@ const Prescriptions = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ patientId: '', medication: '', notes: '' });
   const [message, setMessage] = useState(null);
+  const [activePrescriptions, setActivePrescriptions] = useState([]);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -18,6 +19,16 @@ const Prescriptions = () => {
     
     // Simulate API call
     setTimeout(() => {
+      const patient = patients.find(p => p._id === formData.patientId);
+      const newRx = {
+        id: Date.now(),
+        patientName: patient?.name || 'Unknown',
+        medication: formData.medication,
+        notes: formData.notes,
+        date: new Date().toLocaleDateString()
+      };
+      
+      setActivePrescriptions([newRx, ...activePrescriptions]);
       setMessage({ type: 'success', text: 'Prescription signed and saved successfully!' });
       setFormData({ patientId: '', medication: '', notes: '' });
       setTimeout(() => setMessage(null), 3000);
@@ -59,11 +70,24 @@ const Prescriptions = () => {
           <h3 style={{ marginBottom: '1rem' }}>Active Prescriptions</h3>
           {loading ? (
              <div className="skeleton" style={{ height: 200, borderRadius: 12 }}></div>
-          ) : (
+          ) : activePrescriptions.length === 0 ? (
             <div className="empty-state" style={{ minHeight: 200, padding: '2rem' }}>
                <AlertCircle size={32} />
                <h4>No active prescriptions</h4>
                <p style={{ fontSize: '0.9rem', color: 'var(--text-2)' }}>Select a patient to generate a new prescription.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {activePrescriptions.map(rx => (
+                <div key={rx.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <strong>{rx.patientName}</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-2)' }}>{rx.date}</span>
+                  </div>
+                  <p style={{ fontSize: '0.9rem', margin: '0.25rem 0' }}>💊 {rx.medication}</p>
+                  {rx.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-2)', margin: 0 }}>📝 {rx.notes}</p>}
+                </div>
+              ))}
             </div>
           )}
         </div>

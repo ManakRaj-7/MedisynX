@@ -110,7 +110,7 @@ const Analytics = () => {
               <div className="stat-card-top">
                 <div className="stat-card-icon cyan"><TrendingUp size={22} /></div>
               </div>
-              <div className="stat-value">{appointmentsData.reduce((sum, item) => sum + item.Appointments, 0) > 0 ? '+14%' : '0%'}</div>
+              <div className="stat-value">{data.appointmentsData.reduce((sum, item) => sum + item.Appointments, 0) > 0 ? '+14%' : '0%'}</div>
               <div className="stat-label">Patient Growth</div>
             </div>
             <div className="stat-card">
