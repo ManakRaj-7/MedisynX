@@ -3,11 +3,11 @@ const {
   getPrescriptions,
   createPrescription,
 } = require('../controllers/prescriptionController');
-const { protect } = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.route('/')
   .get(getPrescriptions)
