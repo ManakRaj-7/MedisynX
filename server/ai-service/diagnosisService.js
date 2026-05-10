@@ -69,8 +69,13 @@ const fallbackDiagnosis = (symptoms) => {
 
 const callGeminiAPI = async (payload) => {
   if (!process.env.GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY is not set in environment variables');
     throw new Error('Gemini API key is not configured.');
   }
+
+  // Debug: confirm key is loaded (first 8 chars only for security)
+  console.log('Gemini API Key loaded:', process.env.GEMINI_API_KEY.substring(0, 8) + '...');
+  console.log('Calling Gemini with model: gemini-2.5-flash');
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -123,10 +128,17 @@ End with: *"⚕️ This is an AI-assisted clinical insight and must be validated
       if (parsed >= 0 && parsed <= 100) confidence = parsed;
     }
 
+    console.log('Gemini response received successfully, confidence:', confidence);
     return { text, confidence };
   } catch (error) {
-    console.error('Gemini API Error:', error.message);
-    throw new Error('Failed to generate medical insight from AI service.');
+    // Log the FULL error object for debugging — don't hide it
+    console.error('FULL GEMINI ERROR:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    if (error.status) console.error('Error status:', error.status);
+    if (error.statusText) console.error('Error statusText:', error.statusText);
+    if (error.errorDetails) console.error('Error details:', JSON.stringify(error.errorDetails));
+    throw error;
   }
 };
 
@@ -138,7 +150,8 @@ const getDiagnosis = async (payload) => {
   await loadCache();
   const cacheKey = getCacheKey(payload);
 
-  if (cache[cacheKey]) {
+  // Only return cached results if they were successful (not error responses)
+  if (cache[cacheKey] && cache[cacheKey].source !== 'error-handler') {
     return { ...cache[cacheKey], cached: true };
   }
 
@@ -161,6 +174,7 @@ const getDiagnosis = async (payload) => {
       return { ...fallback, cached: false };
     }
 
+    // Do NOT cache error responses — so retries can succeed after fix
     return {
       source: 'error-handler',
       content: '### Service Unavailable\nThe AI service is currently experiencing high load. Please rely on clinical judgment and try again later.',
