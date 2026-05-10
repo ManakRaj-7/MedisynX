@@ -45,9 +45,18 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>{greeting()}, {user?.name?.split(' ')[0] || 'Doctor'} 👋</h1>
-        <p>Here's your clinical overview for today.</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {greeting()}, {user?.name?.split(' ')[0] || 'Doctor'} 👋
+            <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>Beta</span>
+          </h1>
+          <p>Here's your clinical overview for today.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <span className="badge badge-success">HIPAA Ready</span>
+          <span className="badge badge-info">Cloud Synced</span>
+        </div>
       </div>
 
       {loading ? (
@@ -98,7 +107,7 @@ const Dashboard = () => {
               </div>
               <div style={{ display: 'grid', gap: '0.75rem' }}>
                 <button className="btn btn-primary btn-full" onClick={() => navigate('/ai-assistant')}>
-                  <Bot size={18} /> AI Diagnosis
+                  <Bot size={18} /> Clinical AI
                 </button>
                 <button className="btn btn-secondary btn-full" onClick={() => navigate('/patients')}>
                   <UserPlus size={18} /> Add Patient

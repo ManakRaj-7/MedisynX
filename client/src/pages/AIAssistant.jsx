@@ -54,7 +54,9 @@ const AIAssistant = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div className="stat-card-icon cyan" style={{ width: 48, height: 48 }}><Bot size={28} /></div>
           <div>
-            <h1 style={{ marginBottom: 0 }}>AI Clinical Assistant</h1>
+            <h1 style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              Clinical AI <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>AI Powered</span>
+            </h1>
             <p style={{ color: 'var(--text-2)', marginTop: 2 }}>Powered by Gemini 2.5 Flash — Structured diagnosis with confidence scoring</p>
           </div>
         </div>

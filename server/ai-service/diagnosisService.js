@@ -115,30 +115,45 @@ RESPONSE FORMAT (use exactly these headers):
 Keep the response professional, evidence-informed, and concise.
 End with: *"⚕️ This is an AI-assisted clinical insight and must be validated by a licensed healthcare professional before any clinical decision."*`;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+  // Retry logic for rate limit (429) errors on free tier
+  const MAX_RETRIES = 2;
+  const RETRY_DELAYS = [2000, 5000]; // 2s, then 5s
 
-    // Try to extract confidence from the AI's response
-    let confidence = 75; // default
-    const confMatch = text.match(/(\d{1,3})\s*%/);
-    if (confMatch) {
-      const parsed = parseInt(confMatch[1]);
-      if (parsed >= 0 && parsed <= 100) confidence = parsed;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Try to extract confidence from the AI's response
+      let confidence = 75; // default
+      const confMatch = text.match(/(\d{1,3})\s*%/);
+      if (confMatch) {
+        const parsed = parseInt(confMatch[1]);
+        if (parsed >= 0 && parsed <= 100) confidence = parsed;
+      }
+
+      console.log('Gemini response received successfully, confidence:', confidence);
+      return { text, confidence };
+    } catch (error) {
+      const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('Too Many');
+      
+      if (isRateLimit && attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAYS[attempt];
+        console.warn(`Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // Log the FULL error object for debugging — don't hide it
+      console.error('FULL GEMINI ERROR:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      if (error.status) console.error('Error status:', error.status);
+      if (error.statusText) console.error('Error statusText:', error.statusText);
+      if (error.errorDetails) console.error('Error details:', JSON.stringify(error.errorDetails));
+      throw error;
     }
-
-    console.log('Gemini response received successfully, confidence:', confidence);
-    return { text, confidence };
-  } catch (error) {
-    // Log the FULL error object for debugging — don't hide it
-    console.error('FULL GEMINI ERROR:', error);
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    if (error.status) console.error('Error status:', error.status);
-    if (error.statusText) console.error('Error statusText:', error.statusText);
-    if (error.errorDetails) console.error('Error details:', JSON.stringify(error.errorDetails));
-    throw error;
   }
 };
 
