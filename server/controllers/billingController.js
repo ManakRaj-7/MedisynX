@@ -87,34 +87,50 @@ exports.getBillingPdf = async (req, res, next) => {
 
     doc.pipe(res);
 
-    doc.fontSize(20).text('MedisynX Invoice', { align: 'center' });
-    doc.moveDown();
+    // Header
+    doc.fillColor('#0284c7').fontSize(24).text('MedisynX Invoice', { align: 'center' });
+    doc.fillColor('#64748b').fontSize(12).text('Official Billing Receipt', { align: 'center' });
+    doc.moveDown(2);
 
-    doc.fontSize(12).text(`Invoice ID: ${billing._id}`);
-    doc.text(`Created: ${billing.createdAt.toISOString().slice(0, 10)}`);
-    doc.text(`Status: ${billing.status}`);
-    doc.moveDown();
+    // Details Row 1
+    doc.fillColor('#0f172a').fontSize(12)
+       .text(`Invoice ID: ${billing._id}`, { continued: true })
+       .text(`Date: ${billing.createdAt.toLocaleDateString()}`, { align: 'right' });
+    
+    // Details Row 2
+    doc.text(`Status: ${billing.status}`, { continued: true })
+       .text(`Amount: Rs. ${billing.amount}`, { align: 'right' });
 
-    doc.fontSize(14).text('Patient Details', { underline: true });
-    doc.fontSize(12).text(`Name: ${billing.patientId?.name || 'Unknown'}`);
-    doc.text(`Phone: ${billing.patientId?.phone || 'Unknown'}`);
-    doc.text(`Email: ${billing.patientId?.email || 'Unknown'}`);
-    doc.moveDown();
+    doc.moveTo(50, doc.y + 10).lineTo(550, doc.y + 10).strokeColor('#e2e8f0').stroke();
+    doc.moveDown(2);
 
-    if (billing.appointmentId) {
-      doc.fontSize(14).text('Appointment Details', { underline: true });
-      doc.fontSize(12).text(`Appointment Date: ${billing.appointmentId.appointmentDate?.toISOString().slice(0, 16).replace('T', ' ') || 'Unknown'}`);
-      doc.text(`Appointment Status: ${billing.appointmentId.status || 'Unknown'}`);
-      doc.moveDown();
-    }
+    // Sections
+    doc.fillColor('#0f172a').fontSize(14).text('Patient Information', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(12)
+       .text(`Name: ${billing.patientId?.name || 'Unknown'}`)
+       .text(`Phone: ${billing.patientId?.phone || 'Unknown'}`)
+       .text(`Email: ${billing.patientId?.email || 'N/A'}`);
+    doc.moveDown(1.5);
 
     doc.fontSize(14).text('Billing Details', { underline: true });
-    doc.fontSize(12).text(`Amount: ₹${billing.amount}`);
-    doc.text(`Payment Method: ${billing.paymentMethod || 'N/A'}`);
-    doc.text(`Description: ${billing.description || 'No description provided.'}`);
-    doc.moveDown();
+    doc.moveDown(0.5);
+    doc.fontSize(12)
+       .text(`Payment Method: ${billing.paymentMethod || 'N/A'}`)
+       .text(`Description: ${billing.description || 'Consultation and Services'}`);
+    doc.moveDown(2);
 
-    doc.text('Thank you for choosing MedisynX.', { align: 'center' });
+    if (billing.appointmentId) {
+      doc.fontSize(14).text('Appointment Reference', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12)
+         .text(`Date: ${new Date(billing.appointmentId.appointmentDate).toLocaleString()}`)
+         .text(`Status: ${billing.appointmentId.status}`);
+      doc.moveDown(2);
+    }
+
+    doc.moveDown(2);
+    doc.fillColor('#64748b').fontSize(10).text('Thank you for choosing MedisynX Clinic.', { align: 'center' });
     doc.end();
   } catch (error) {
     next(error);

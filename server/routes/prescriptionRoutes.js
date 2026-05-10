@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getPrescriptions,
   createPrescription,
+  getPrescriptionPdf
 } = require('../controllers/prescriptionController');
 const authMiddleware = require('../middleware/auth');
 
@@ -12,5 +13,8 @@ router.use(authMiddleware);
 router.route('/')
   .get(getPrescriptions)
   .post(createPrescription);
+
+router.route('/:id/pdf')
+  .get(getPrescriptionPdf);
 
 module.exports = router;

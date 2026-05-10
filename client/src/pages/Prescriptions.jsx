@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost } from '../api/api';
+import { apiGet, apiPost, apiGetBlob } from '../api/api';
 import { getToken } from '../utils/auth';
-import { Pill, PlusCircle, Printer, AlertCircle, CheckCircle } from 'lucide-react';
+import { Pill, PlusCircle, Printer, AlertCircle, CheckCircle, Download } from 'lucide-react';
 
 const Prescriptions = () => {
   const [patients, setPatients] = useState([]);
@@ -44,6 +44,21 @@ const Prescriptions = () => {
       setMessage({ type: 'error', text: 'Failed to save. Did you restart your backend server?' });
       setTimeout(() => setMessage(null), 5000);
     });
+  };
+
+  const downloadPdf = async (id) => {
+    try {
+      const token = getToken();
+      const blob = await apiGetBlob(`/prescriptions/${id}/pdf`, token);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `rx-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch { setMessage({ type: 'error', text: 'Failed to download PDF.' }); setTimeout(() => setMessage(null), 3000); }
   };
 
   useEffect(() => {
@@ -93,11 +108,18 @@ const Prescriptions = () => {
             <div style={{ display: 'grid', gap: '1rem' }}>
               {activePrescriptions.map(rx => (
                 <div key={rx._id || Math.random()} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
                     <strong>{rx.patientName}</strong>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-2)' }}>
-                      {rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : 'Just now'}
-                    </span>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-2)' }}>
+                        {rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : 'Just now'}
+                      </span>
+                      {rx._id && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => downloadPdf(rx._id)} title="Download PDF" style={{ padding: '0.3rem' }}>
+                          <Download size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p style={{ fontSize: '0.9rem', margin: '0.25rem 0' }}>💊 {rx.medication}</p>
                   {rx.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-2)', margin: 0 }}>📝 {rx.notes}</p>}
