@@ -62,8 +62,8 @@ const Settings = () => {
                 </div>
                 <button 
                   onClick={() => setIsDarkMode(!isDarkMode)} 
-                  className="btn btn-ghost"
-                  style={{ width: 48, height: 48, borderRadius: '50%' }}
+                  className="btn btn-secondary"
+                  style={{ width: 48, height: 48, borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
                 >
                   {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
                 </button>
@@ -78,7 +78,7 @@ const Settings = () => {
                   type="checkbox" 
                   checked={notifications} 
                   onChange={(e) => setNotifications(e.target.checked)} 
-                  style={{ width: 24, height: 24 }} 
+                  style={{ width: 24, height: 24, accentColor: 'var(--primary)', cursor: 'pointer' }} 
                 />
              </div>
           </div>

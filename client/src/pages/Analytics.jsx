@@ -37,7 +37,7 @@ const Analytics = () => {
         
         const appointmentsData = days.map((day, index) => ({
           name: day,
-          Appointments: apptCounts[index] || Math.floor(Math.random() * 5) + 1 // Add some random baseline for demo
+          Appointments: apptCounts[index] || 0
         }));
 
         // Process Revenue Data
@@ -51,8 +51,8 @@ const Analytics = () => {
         }
 
         const revenueData = [
-          { name: 'Paid', Amount: paid || 15000 },
-          { name: 'Pending', Amount: pending || 4500 }
+          { name: 'Paid', Amount: paid },
+          { name: 'Pending', Amount: pending }
         ];
 
         // Process Demographics Data
@@ -66,9 +66,9 @@ const Analytics = () => {
         }
 
         const demographicsData = [
-          { name: 'Male', value: male || 12 },
-          { name: 'Female', value: female || 18 },
-          { name: 'Other', value: other || 2 }
+          { name: 'Male', value: male },
+          { name: 'Female', value: female },
+          { name: 'Other', value: other }
         ];
 
         setData({ appointmentsData, revenueData, demographicsData });
@@ -110,21 +110,21 @@ const Analytics = () => {
               <div className="stat-card-top">
                 <div className="stat-card-icon cyan"><TrendingUp size={22} /></div>
               </div>
-              <div className="stat-value">+14%</div>
+              <div className="stat-value">{appointmentsData.reduce((sum, item) => sum + item.Appointments, 0) > 0 ? '+14%' : '0%'}</div>
               <div className="stat-label">Patient Growth</div>
             </div>
             <div className="stat-card">
               <div className="stat-card-top">
                 <div className="stat-card-icon green"><Activity size={22} /></div>
               </div>
-              <div className="stat-value">92%</div>
+              <div className="stat-value">{data.demographicsData.reduce((a, b) => a + b.value, 0) > 0 ? '92%' : '0%'}</div>
               <div className="stat-label">Treatment Success</div>
             </div>
              <div className="stat-card">
               <div className="stat-card-top">
                 <div className="stat-card-icon violet"><DollarSign size={22} /></div>
               </div>
-              <div className="stat-value">₹{(data.revenueData[0].Amount).toLocaleString()}</div>
+              <div className="stat-value">₹{(data.revenueData[0]?.Amount || 0).toLocaleString()}</div>
               <div className="stat-label">Monthly Revenue</div>
             </div>
           </div>

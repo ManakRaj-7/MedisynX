@@ -1,11 +1,28 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/api';
 import { getToken } from '../utils/auth';
-import { Pill, PlusCircle, Printer, AlertCircle } from 'lucide-react';
+import { Pill, PlusCircle, Printer, AlertCircle, CheckCircle } from 'lucide-react';
 
 const Prescriptions = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({ patientId: '', medication: '', notes: '' });
+  const [message, setMessage] = useState(null);
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!formData.patientId || !formData.medication) {
+      setMessage({ type: 'error', text: 'Patient and Medication are required.' });
+      return;
+    }
+    
+    // Simulate API call
+    setTimeout(() => {
+      setMessage({ type: 'success', text: 'Prescription signed and saved successfully!' });
+      setFormData({ patientId: '', medication: '', notes: '' });
+      setTimeout(() => setMessage(null), 3000);
+    }, 500);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -53,11 +70,23 @@ const Prescriptions = () => {
 
         <div className="card">
           <h3 style={{ marginBottom: '1rem' }}>Quick Rx Generator</h3>
-          <form className="form-grid">
+          
+          {message && (
+            <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>
+              {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+              {message.text}
+            </div>
+          )}
+
+          <form className="form-grid" onSubmit={handleSave}>
             <div className="input-group">
               <label>Select Patient</label>
               <div className="input-wrapper">
-                <select defaultValue="">
+                <select 
+                  value={formData.patientId} 
+                  onChange={e => setFormData({...formData, patientId: e.target.value})}
+                  required
+                >
                   <option value="" disabled>Choose a patient...</option>
                   {patients.map(p => (
                     <option key={p._id} value={p._id}>{p.name} ({p.phone})</option>
@@ -69,20 +98,31 @@ const Prescriptions = () => {
             <div className="input-group">
               <label>Medication (with dosage & frequency)</label>
               <div className="input-wrapper">
-                <textarea placeholder="e.g., Amoxicillin 500mg, 1 tablet 3 times a day for 5 days..." style={{ minHeight: 120 }} />
+                <textarea 
+                  value={formData.medication}
+                  onChange={e => setFormData({...formData, medication: e.target.value})}
+                  placeholder="e.g., Amoxicillin 500mg, 1 tablet 3 times a day for 5 days..." 
+                  style={{ minHeight: 120 }} 
+                  required
+                />
               </div>
             </div>
             
             <div className="input-group">
               <label>Additional Notes</label>
               <div className="input-wrapper">
-                <input type="text" placeholder="Take after meals..." />
+                <input 
+                  type="text" 
+                  value={formData.notes}
+                  onChange={e => setFormData({...formData, notes: e.target.value})}
+                  placeholder="Take after meals..." 
+                />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-               <button type="button" className="btn btn-primary" style={{ flex: 1 }}>Save & Sign Rx</button>
-               <button type="button" className="btn btn-secondary" style={{ flex: 1 }}><Printer size={18} /> Print PDF</button>
+               <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save & Sign Rx</button>
+               <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => window.print()}><Printer size={18} /> Print PDF</button>
             </div>
           </form>
         </div>
