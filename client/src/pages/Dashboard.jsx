@@ -126,7 +126,7 @@ const Dashboard = () => {
               <div style={{ display: 'grid', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-2)', fontSize: '0.9rem' }}>AI Engine</span>
-                  <span className="badge badge-success">Gemini 2.5 Flash</span>
+                  <span className="badge badge-success">Gemini 1.5 Flash</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-2)', fontSize: '0.9rem' }}>Database</span>
