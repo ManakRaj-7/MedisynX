@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet } from '../api/api';
+import { apiGet, apiPost } from '../api/api';
 import { getToken } from '../utils/auth';
 import { Pill, PlusCircle, Printer, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -8,10 +8,7 @@ const Prescriptions = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ patientId: '', medication: '', notes: '' });
   const [message, setMessage] = useState(null);
-  const [activePrescriptions, setActivePrescriptions] = useState(() => {
-    const saved = localStorage.getItem('medisynx_prescriptions');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [activePrescriptions, setActivePrescriptions] = useState([]);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -20,25 +17,30 @@ const Prescriptions = () => {
       return;
     }
     
-    // Simulate API call
-    setTimeout(() => {
-      const patient = patients.find(p => p._id === formData.patientId);
-      const newRx = {
-        id: Date.now(),
-        patientName: patient?.name || 'Unknown',
-        medication: formData.medication,
-        notes: formData.notes,
-        date: new Date().toLocaleDateString()
+    // API call to save in database
+    const token = getToken();
+    apiPost('/prescriptions', {
+      patientId: formData.patientId,
+      medication: formData.medication,
+      notes: formData.notes
+    }, token).then(newRx => {
+      // Create local representation for instant UI update
+      const rxWithDate = {
+        _id: newRx._id,
+        patientName: newRx.patientName,
+        medication: newRx.medication,
+        notes: newRx.notes,
+        createdAt: newRx.createdAt
       };
       
-      const updatedRx = [newRx, ...activePrescriptions];
-      setActivePrescriptions(updatedRx);
-      localStorage.setItem('medisynx_prescriptions', JSON.stringify(updatedRx));
-      
+      setActivePrescriptions([rxWithDate, ...activePrescriptions]);
       setMessage({ type: 'success', text: 'Prescription signed and saved successfully!' });
       setFormData({ patientId: '', medication: '', notes: '' });
       setTimeout(() => setMessage(null), 3000);
-    }, 500);
+    }).catch(err => {
+      setMessage({ type: 'error', text: 'Failed to save prescription to server.' });
+      setTimeout(() => setMessage(null), 3000);
+    });
   };
 
   useEffect(() => {
@@ -46,7 +48,9 @@ const Prescriptions = () => {
       try {
         const token = getToken();
         const pts = await apiGet('/patients', token);
+        const rxs = await apiGet('/prescriptions', token);
         setPatients(Array.isArray(pts) ? pts : []);
+        setActivePrescriptions(Array.isArray(rxs) ? rxs : []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -85,10 +89,12 @@ const Prescriptions = () => {
           ) : (
             <div style={{ display: 'grid', gap: '1rem' }}>
               {activePrescriptions.map(rx => (
-                <div key={rx.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-2)' }}>
+                <div key={rx._id || Math.random()} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <strong>{rx.patientName}</strong>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-2)' }}>{rx.date}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-2)' }}>
+                      {rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : 'Just now'}
+                    </span>
                   </div>
                   <p style={{ fontSize: '0.9rem', margin: '0.25rem 0' }}>💊 {rx.medication}</p>
                   {rx.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-2)', margin: 0 }}>📝 {rx.notes}</p>}

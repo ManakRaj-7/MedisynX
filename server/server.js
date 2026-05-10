@@ -13,6 +13,7 @@ const appointmentRoutes = require('./routes/appointments');
 const billingRoutes = require('./routes/billing');
 const aiRoutes = require('./routes/ai');
 const demoRoutes = require('./routes/demo');
+const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/v1/appointments', appointmentRoutes);
 app.use('/api/v1/billing', billingRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/demo', demoRoutes);
+app.use('/api/v1/prescriptions', prescriptionRoutes);
 
 // Health check
 app.get('/', (req, res) => {
