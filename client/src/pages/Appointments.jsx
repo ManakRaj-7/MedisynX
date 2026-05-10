@@ -69,7 +69,7 @@ const Appointments = () => {
           setMessage({ text: updated.message || 'Update failed.', type: 'error' });
         }
       } else {
-        const payload = { ...form, doctorId: user?._id || 'self' };
+        const payload = { ...form };
         const result = await apiPost('/appointments', payload, token);
         if (result._id) {
           const resultWithPatient = { ...result, patientId: patients.find(p => p._id === result.patientId) || result.patientId };
