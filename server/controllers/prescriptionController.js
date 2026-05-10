@@ -1,7 +1,6 @@
 const Prescription = require('../models/Prescription');
 const Patient = require('../models/Patient');
 const PDFDocument = require('pdfkit');
-const Patient = require('../models/Patient');
 
 // @desc    Get all prescriptions for logged-in doctor
 // @route   GET /api/v1/prescriptions
