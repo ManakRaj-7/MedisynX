@@ -7,6 +7,11 @@ const billingSchema = new mongoose.Schema(
       ref: 'Patient',
       required: true,
     },
+    doctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Doctor',
+      required: true,
+    },
     appointmentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Appointment',
