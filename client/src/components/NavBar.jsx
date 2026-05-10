@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { logout, isAuthenticated, getUser } from '../utils/auth';
 import {
   LayoutDashboard, Users, Calendar, CreditCard, Bot,
-  LogOut, LogIn, UserCircle, Download
+  LogOut, LogIn, UserCircle, Download, FileText, Pill, BarChart3, Settings as SettingsIcon
 } from 'lucide-react';
 
 const NavBar = () => {
@@ -59,9 +59,25 @@ const NavBar = () => {
           <CreditCard size={20} />
           <span>Billing</span>
         </NavLink>
+        <NavLink to="/medical-records" className={({ isActive }) => isActive ? 'active' : ''}>
+          <FileText size={20} />
+          <span>Medical Records</span>
+        </NavLink>
+        <NavLink to="/prescriptions" className={({ isActive }) => isActive ? 'active' : ''}>
+          <Pill size={20} />
+          <span>Prescriptions</span>
+        </NavLink>
+        <NavLink to="/analytics" className={({ isActive }) => isActive ? 'active' : ''}>
+          <BarChart3 size={20} />
+          <span>Analytics</span>
+        </NavLink>
         <NavLink to="/ai-assistant" className={({ isActive }) => isActive ? 'active' : ''}>
           <Bot size={20} />
-          <span>AI Assistant</span>
+          <span>Clinical AI</span>
+        </NavLink>
+        <NavLink to="/settings" className={({ isActive }) => isActive ? 'active' : ''}>
+          <SettingsIcon size={20} />
+          <span>Settings</span>
         </NavLink>
         <NavLink to="/profile" className={({ isActive }) => isActive ? 'active' : ''}>
           <UserCircle size={20} />
