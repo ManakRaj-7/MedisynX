@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPatch } from '../api/api';
-import { getToken, getUser } from '../utils/auth';
+import { getToken } from '../utils/auth';
 import { CalendarPlus, Clock, Edit2, X, Calendar } from 'lucide-react';
 
 const Appointments = () => {
@@ -11,7 +11,7 @@ const Appointments = () => {
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(true);
-  const user = getUser();
+
 
   useEffect(() => {
     const load = async () => {
