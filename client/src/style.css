@@ -608,4 +608,10 @@ input:-webkit-autofill:active {
   
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .layout-2col, .layout-2col-equal { grid-template-columns: 1fr; }
+  
+  .theme-toggle-btn {
+    top: auto !important;
+    bottom: 1.5rem !important;
+    right: 1.5rem !important;
+  }
 }

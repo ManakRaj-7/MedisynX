@@ -49,7 +49,7 @@ const App = () => {
       {/* Floating Theme Toggle */}
       <button 
         onClick={toggleTheme}
-        className="btn btn-ghost"
+        className="btn btn-ghost theme-toggle-btn"
         style={{
           position: 'fixed',
           top: '1.5rem',
