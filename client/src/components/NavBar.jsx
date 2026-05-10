@@ -41,13 +41,15 @@ const NavBar = () => {
   return (
     <>
       <div className="mobile-header">
-        <div className="sidebar-logo" style={{ marginBottom: 0, padding: 0 }}>
-          <div className="logo-dot"></div>
-          <span>MedisynX</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button className="btn btn-ghost" onClick={() => setIsMobileOpen(true)} style={{ padding: '0.4rem' }}>
+            <Menu size={24} />
+          </button>
+          <div className="sidebar-logo" style={{ marginBottom: 0, padding: 0 }}>
+            <div className="logo-dot"></div>
+            <span>MedisynX</span>
+          </div>
         </div>
-        <button className="btn btn-ghost" onClick={() => setIsMobileOpen(true)} style={{ padding: '0.5rem' }}>
-          <Menu size={24} />
-        </button>
       </div>
 
       {isMobileOpen && <div className="sidebar-overlay" onClick={() => setIsMobileOpen(false)}></div>}
