@@ -548,6 +548,11 @@ input:-webkit-autofill:active {
   gap: 2rem;
 }
 
+.profile-grid {
+  grid-template-columns: 280px 1fr;
+  align-items: start;
+}
+
 /* ============ SKELETON / LOADING ============ */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -609,7 +614,7 @@ input:-webkit-autofill:active {
   .card { padding: 1.25rem; }
   
   .stats-grid { grid-template-columns: 1fr 1fr; }
-  .layout-2col, .layout-2col-equal { grid-template-columns: 1fr; }
+  .layout-2col, .layout-2col-equal, .profile-grid { grid-template-columns: 1fr; }
   
   .theme-toggle-btn {
     top: 0.6rem !important;

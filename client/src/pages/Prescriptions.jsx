@@ -8,7 +8,10 @@ const Prescriptions = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ patientId: '', medication: '', notes: '' });
   const [message, setMessage] = useState(null);
-  const [activePrescriptions, setActivePrescriptions] = useState([]);
+  const [activePrescriptions, setActivePrescriptions] = useState(() => {
+    const saved = localStorage.getItem('medisynx_prescriptions');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -28,7 +31,10 @@ const Prescriptions = () => {
         date: new Date().toLocaleDateString()
       };
       
-      setActivePrescriptions([newRx, ...activePrescriptions]);
+      const updatedRx = [newRx, ...activePrescriptions];
+      setActivePrescriptions(updatedRx);
+      localStorage.setItem('medisynx_prescriptions', JSON.stringify(updatedRx));
+      
       setMessage({ type: 'success', text: 'Prescription signed and saved successfully!' });
       setFormData({ patientId: '', medication: '', notes: '' });
       setTimeout(() => setMessage(null), 3000);

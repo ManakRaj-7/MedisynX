@@ -96,7 +96,7 @@ const Profile = () => {
 
       {message.text && <div className={`alert alert-${message.type}`} style={{ marginBottom: '1.5rem' }}>{message.text}</div>}
 
-      <div className="layout-2col" style={{ gridTemplateColumns: '280px 1fr', alignItems: 'start' }}>
+      <div className="layout-2col profile-grid">
         {/* Sidebar */}
         <div className="card" style={{ padding: '1rem', position: 'sticky', top: '1.5rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '1rem' }}>
