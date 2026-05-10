@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { logout, isAuthenticated, getUser } from '../utils/auth';
 import {
   LayoutDashboard, Users, Calendar, CreditCard, Bot,
-  LogOut, LogIn, UserCircle, Download, FileText, Pill, BarChart3, Settings as SettingsIcon
+  LogOut, LogIn, UserCircle, Download, FileText, Pill, BarChart3, Settings as SettingsIcon, Menu, X
 } from 'lucide-react';
 
 const NavBar = () => {
@@ -11,6 +11,9 @@ const NavBar = () => {
   const auth = isAuthenticated();
   const user = getUser();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleNavClick = () => setIsMobileOpen(false);
 
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -36,50 +39,69 @@ const NavBar = () => {
     : 'DR';
 
   return (
-    <nav className="sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-dot"></div>
-        <span>MedisynX</span>
+    <>
+      <div className="mobile-header">
+        <div className="sidebar-logo" style={{ marginBottom: 0, padding: 0 }}>
+          <div className="logo-dot"></div>
+          <span>MedisynX</span>
+        </div>
+        <button className="btn btn-ghost" onClick={() => setIsMobileOpen(true)} style={{ padding: '0.5rem' }}>
+          <Menu size={24} />
+        </button>
       </div>
 
-      <div className="sidebar-nav">
-        <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>
+      {isMobileOpen && <div className="sidebar-overlay" onClick={() => setIsMobileOpen(false)}></div>}
+
+      <nav className={`sidebar ${isMobileOpen ? 'open' : ''}`}>
+        <div className="sidebar-logo mobile-hidden">
+          <div className="logo-dot"></div>
+          <span>MedisynX</span>
+        </div>
+        
+        {isMobileOpen && (
+           <button className="btn btn-ghost mobile-close" onClick={() => setIsMobileOpen(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.5rem' }}>
+             <X size={24} />
+           </button>
+        )}
+
+      <div className="sidebar-nav" style={{ marginTop: isMobileOpen ? '2rem' : '0' }}>
+        <NavLink to="/dashboard" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <LayoutDashboard size={20} />
           <span>Dashboard</span>
         </NavLink>
-        <NavLink to="/patients" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/patients" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <Users size={20} />
           <span>Patients</span>
         </NavLink>
-        <NavLink to="/appointments" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/appointments" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <Calendar size={20} />
           <span>Appointments</span>
         </NavLink>
-        <NavLink to="/billing" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/billing" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <CreditCard size={20} />
           <span>Billing</span>
         </NavLink>
-        <NavLink to="/medical-records" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/medical-records" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <FileText size={20} />
           <span>Medical Records</span>
         </NavLink>
-        <NavLink to="/prescriptions" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/prescriptions" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <Pill size={20} />
           <span>Prescriptions</span>
         </NavLink>
-        <NavLink to="/analytics" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/analytics" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <BarChart3 size={20} />
           <span>Analytics</span>
         </NavLink>
-        <NavLink to="/ai-assistant" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/ai-assistant" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <Bot size={20} />
           <span>Clinical AI</span>
         </NavLink>
-        <NavLink to="/settings" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/settings" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <SettingsIcon size={20} />
           <span>Settings</span>
         </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => isActive ? 'active' : ''}>
+        <NavLink to="/profile" onClick={handleNavClick} className={({ isActive }) => isActive ? 'active' : ''}>
           <UserCircle size={20} />
           <span>My Profile</span>
         </NavLink>
@@ -146,6 +168,7 @@ const NavBar = () => {
         )}
       </div>
     </nav>
+    </>
   );
 };
 
