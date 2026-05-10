@@ -122,7 +122,7 @@ const Appointments = () => {
                 <div className="input-wrapper">
                   <select name="patientId" value={form.patientId} onChange={handleChange} required>
                     <option value="">Select patient...</option>
-                    {patients.map(p => <option key={p._id} value={p._id}>{p.name} ({p.phone})</option>)}
+                    {patients.map(p => <option key={p._id} value={p._id}>{p.name} (ID: {p._id.slice(-6).toUpperCase()})</option>)}
                   </select>
                 </div>
               </div>
@@ -159,10 +159,11 @@ const Appointments = () => {
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Patient</th><th>Date</th><th>Symptoms</th><th>Status</th><th>Action</th></tr></thead>
+              <thead><tr><th>ID</th><th>Patient</th><th>Date</th><th>Symptoms</th><th>Status</th><th>Action</th></tr></thead>
               <tbody>
                 {appointments.map(a => (
                   <tr key={a._id}>
+                    <td><span className="badge badge-info" style={{ fontFamily: 'monospace' }}>{a.patientId?._id ? a.patientId._id.slice(-6).toUpperCase() : 'N/A'}</span></td>
                     <td style={{ fontWeight: 600, color: 'var(--text-0)' }}>{a.patientId?.name || '—'}</td>
                     <td>{new Date(a.appointmentDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
                     <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.symptoms || '—'}</td>

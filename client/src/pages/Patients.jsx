@@ -156,13 +156,14 @@ const Patients = () => {
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Name</th><th>Age</th><th>Gender</th><th>Phone</th><th>Email</th><th style={{ width: 80 }}>Action</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Phone</th><th>Email</th><th style={{ width: 80 }}>Action</th></tr></thead>
               <tbody>
                 {filtered.map(p => (
                   <tr key={p._id}>
+                    <td><span className="badge badge-info" style={{ fontFamily: 'monospace' }}>{p._id.slice(-6).toUpperCase()}</span></td>
                     <td style={{ fontWeight: 600, color: 'var(--text-0)' }}>{p.name}</td>
                     <td>{p.age}</td>
-                    <td><span className="badge badge-info">{p.gender}</span></td>
+                    <td><span className="badge badge-outline">{p.gender}</span></td>
                     <td>{p.phone}</td>
                     <td>{p.email || '—'}</td>
                     <td>

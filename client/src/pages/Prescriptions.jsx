@@ -30,6 +30,7 @@ const Prescriptions = () => {
       // Create local representation for instant UI update
       const rxWithDate = {
         _id: newRx._id,
+        patientId: newRx.patientId,
         patientName: newRx.patientName,
         medication: newRx.medication,
         notes: newRx.notes,
@@ -78,6 +79,13 @@ const Prescriptions = () => {
     loadData();
   }, []);
 
+  const groupedPrescriptions = activePrescriptions.reduce((acc, rx) => {
+    const key = rx.patientId || rx.patientName;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(rx);
+    return acc;
+  }, {});
+
   return (
     <>
       <div className="page-header no-print">
@@ -105,24 +113,31 @@ const Prescriptions = () => {
                <p style={{ fontSize: '0.9rem', color: 'var(--text-2)' }}>Select a patient to generate a new prescription.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              {activePrescriptions.map(rx => (
-                <div key={rx._id || Math.random()} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
-                    <strong>{rx.patientName}</strong>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-2)' }}>
-                        {rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : 'Just now'}
-                      </span>
-                      {rx._id && (
-                        <button className="btn btn-ghost btn-sm" onClick={() => downloadPdf(rx._id)} title="Download PDF" style={{ padding: '0.3rem' }}>
-                          <Download size={14} />
-                        </button>
-                      )}
-                    </div>
+            <div style={{ display: 'grid', gap: '1.5rem' }}>
+              {Object.entries(groupedPrescriptions).map(([key, rxs]) => (
+                <div key={key} style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div style={{ background: 'var(--bg-2)', padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0 }}>{rxs[0].patientName} <span className="badge badge-info" style={{ marginLeft: '0.5rem', fontFamily: 'monospace' }}>ID: {String(rxs[0].patientId || key).slice(-6).toUpperCase()}</span></h4>
+                    <span className="badge badge-outline">{rxs.length} Prescription{rxs.length > 1 ? 's' : ''}</span>
                   </div>
-                  <p style={{ fontSize: '0.9rem', margin: '0.25rem 0' }}>💊 {rx.medication}</p>
-                  {rx.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-2)', margin: 0 }}>📝 {rx.notes}</p>}
+                  <div style={{ padding: '1rem', display: 'grid', gap: '1rem' }}>
+                    {rxs.map(rx => (
+                      <div key={rx._id || Math.random()} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-0)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            📅 {rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : 'Just now'}
+                          </span>
+                          {rx._id && (
+                            <button className="btn btn-ghost btn-sm" onClick={() => downloadPdf(rx._id)} title="Download PDF" style={{ padding: '0.3rem 0.6rem' }}>
+                              <Download size={14} /> Download PDF
+                            </button>
+                          )}
+                        </div>
+                        <p style={{ fontSize: '0.9rem', margin: '0.25rem 0' }}>💊 {rx.medication}</p>
+                        {rx.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-2)', margin: 0 }}>📝 {rx.notes}</p>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -150,7 +165,7 @@ const Prescriptions = () => {
                 >
                   <option value="" disabled>Choose a patient...</option>
                   {patients.map(p => (
-                    <option key={p._id} value={p._id}>{p.name} ({p.phone})</option>
+                    <option key={p._id} value={p._id}>{p.name} (ID: {p._id.slice(-6).toUpperCase()})</option>
                   ))}
                 </select>
               </div>

@@ -142,7 +142,7 @@ const Billing = () => {
                 <div className="input-wrapper">
                   <select name="patientId" value={form.patientId} onChange={handleChange} required>
                     <option value="">Select patient...</option>
-                    {patients.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                    {patients.map(p => <option key={p._id} value={p._id}>{p.name} (ID: {p._id.slice(-6).toUpperCase()})</option>)}
                   </select>
                 </div>
               </div>
@@ -186,10 +186,11 @@ const Billing = () => {
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Patient</th><th>Amount</th><th>Description</th><th>Status</th><th>Method</th><th>Action</th></tr></thead>
+              <thead><tr><th>ID</th><th>Patient</th><th>Amount</th><th>Description</th><th>Status</th><th>Method</th><th>Action</th></tr></thead>
               <tbody>
                 {invoices.map(inv => (
                   <tr key={inv._id}>
+                    <td><span className="badge badge-info" style={{ fontFamily: 'monospace' }}>{inv.patientId?._id ? inv.patientId._id.slice(-6).toUpperCase() : 'N/A'}</span></td>
                     <td style={{ fontWeight: 600, color: 'var(--text-0)' }}>{inv.patientId?.name || '—'}</td>
                     <td>₹{Number(inv.amount)?.toLocaleString()}</td>
                     <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.description || '—'}</td>
