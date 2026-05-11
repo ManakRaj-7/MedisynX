@@ -41,8 +41,8 @@ const AIAssistant = () => {
       const response = await apiPost('/ai/diagnose', { symptoms, age, gender, history }, token);
       setElapsed(((Date.now() - start) / 1000).toFixed(1));
       setResult(response);
-    } catch {
-      setError('AI service unavailable. Please try again.');
+    } catch (err) {
+      setError(err.message || 'AI service unavailable. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -12,13 +12,29 @@ const createHeaders = (token) => {
   return headers;
 };
 
+const parseResponse = async (response) => {
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await response.json()
+    : await response.text();
+
+  if (!response.ok) {
+    const message = typeof data === 'object' && data !== null
+      ? data.message || data.error
+      : data;
+    throw new Error(message || `Request failed with status ${response.status}`);
+  }
+
+  return data;
+};
+
 export const apiPost = async (path, body, token) => {
   const response = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: createHeaders(token),
     body: JSON.stringify(body),
   });
-  return response.json();
+  return parseResponse(response);
 };
 
 export const apiGet = async (path, token) => {
@@ -26,7 +42,7 @@ export const apiGet = async (path, token) => {
     method: 'GET',
     headers: createHeaders(token),
   });
-  return response.json();
+  return parseResponse(response);
 };
 
 export const apiGetBlob = async (path, token) => {
@@ -47,7 +63,7 @@ export const apiPatch = async (path, body, token) => {
     headers: createHeaders(token),
     body: JSON.stringify(body),
   });
-  return response.json();
+  return parseResponse(response);
 };
 
 export const apiPut = async (path, body, token) => {
@@ -56,5 +72,5 @@ export const apiPut = async (path, body, token) => {
     headers: createHeaders(token),
     body: JSON.stringify(body),
   });
-  return response.json();
+  return parseResponse(response);
 };

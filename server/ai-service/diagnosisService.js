@@ -208,20 +208,18 @@ End with: *"⚕️ This is an AI-assisted clinical insight and must be validated
   let finalResult = null;
 
   try {
-    // 1. Try OpenRouter First (Free Models)
-    console.log("Attempting OpenRouter models first...");
-    const { text, confidence, modelUsed } = await callOpenRouterAPI(prompt);
-    sourceUsed = modelUsed;
+    // Gemini is the primary provider for MedisynX. OpenRouter free models are used only as fallback
+    // because their availability and rate limits can vary by model/provider.
+    const { text, confidence } = await callGeminiAPI(prompt);
+    sourceUsed = 'gemini-2.5-flash';
     finalResult = { text, confidence };
-  } catch (orError) {
-    console.log("OpenRouter failed entirely. Falling back to Gemini 2.5 Flash...");
+  } catch (geminiError) {
+    console.log("Gemini failed. Falling back to OpenRouter models...");
     try {
-      // 2. Fallback to Gemini
-      const { text, confidence } = await callGeminiAPI(prompt);
-      sourceUsed = 'gemini-2.5-flash';
+      const { text, confidence, modelUsed } = await callOpenRouterAPI(prompt);
+      sourceUsed = modelUsed;
       finalResult = { text, confidence };
-    } catch (geminiError) {
-      // 3. Fallback to hardcoded fallback
+    } catch (openRouterError) {
       const fallback = fallbackDiagnosis(payload.symptoms);
       if (fallback) {
         return { ...fallback, cached: false };
@@ -232,7 +230,7 @@ End with: *"⚕️ This is an AI-assisted clinical insight and must be validated
         content: '### Service Unavailable\nThe AI service is currently experiencing high load. Please rely on clinical judgment and try again later.',
         confidence: 0,
         disclaimer: 'AI service unavailable.',
-        error: geminiError.message,
+        error: openRouterError.message || geminiError.message,
         cached: false,
       };
     }
@@ -254,4 +252,3 @@ End with: *"⚕️ This is an AI-assisted clinical insight and must be validated
 module.exports = {
   getDiagnosis,
 };
-
