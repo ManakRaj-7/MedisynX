@@ -57,6 +57,19 @@ export const apiGetBlob = async (path, token) => {
   return response.blob();
 };
 
+export const apiPostBlob = async (path, body, token) => {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: createHeaders(token),
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || 'Failed to download file');
+  }
+  return response.blob();
+};
+
 export const apiPatch = async (path, body, token) => {
   const response = await fetch(`${API_URL}${path}`, {
     method: 'PATCH',

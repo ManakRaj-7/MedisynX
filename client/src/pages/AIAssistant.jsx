@@ -1,8 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { apiPost } from '../api/api';
+import { apiPost, apiPostBlob } from '../api/api';
 import { getToken } from '../utils/auth';
-import { Bot, Sparkles, AlertCircle, Info, Clock, Zap } from 'lucide-react';
+import { Bot, Sparkles, AlertCircle, Info, Clock, Zap, Download, History, FileText } from 'lucide-react';
+
+const HISTORY_KEY = 'medisynx_clinical_ai_history';
+const MAX_HISTORY = 5;
+
+const readHistory = () => {
+  try {
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(history) ? history.slice(0, MAX_HISTORY) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeHistory = (history) => {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+};
 
 const ConfidenceMeter = ({ value }) => {
   const color = value >= 75 ? 'var(--success)' : value >= 50 ? 'var(--warning)' : 'var(--danger)';
@@ -29,6 +45,26 @@ const AIAssistant = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [elapsed, setElapsed] = useState(0);
+  const [historyItems, setHistoryItems] = useState([]);
+  const [currentCase, setCurrentCase] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    setHistoryItems(readHistory());
+  }, []);
+
+  const saveHistoryItem = (caseData, aiResult, responseTime) => {
+    const item = {
+      id: `${Date.now()}`,
+      savedAt: new Date().toISOString(),
+      caseData,
+      result: aiResult,
+      elapsed: responseTime,
+    };
+    const nextHistory = [item, ...readHistory()].slice(0, MAX_HISTORY);
+    writeHistory(nextHistory);
+    setHistoryItems(nextHistory);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,14 +74,55 @@ const AIAssistant = () => {
     const start = Date.now();
     try {
       const token = getToken();
-      const response = await apiPost('/ai/diagnose', { symptoms, age, gender, history }, token);
-      setElapsed(((Date.now() - start) / 1000).toFixed(1));
+      const caseData = { symptoms, age, gender, history };
+      const response = await apiPost('/ai/diagnose', caseData, token);
+      const responseTime = ((Date.now() - start) / 1000).toFixed(1);
+      setCurrentCase(caseData);
+      setElapsed(responseTime);
       setResult(response);
+      saveHistoryItem(caseData, response, responseTime);
     } catch (err) {
       setError(err.message || 'AI service unavailable. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadPdf = async (item) => {
+    const reportResult = item?.result || result;
+    const caseData = item?.caseData || currentCase || { symptoms, age, gender, history };
+    if (!reportResult?.content) return;
+
+    setError('');
+    setDownloading(true);
+    try {
+      const token = getToken();
+      const blob = await apiPostBlob('/ai/diagnose/pdf', { ...caseData, result: reportResult }, token);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `clinical-ai-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || 'Failed to download Clinical AI PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const loadHistoryItem = (item) => {
+    setSymptoms(item.caseData.symptoms || '');
+    setAge(item.caseData.age || '');
+    setGender(item.caseData.gender || 'Male');
+    setHistory(item.caseData.history || '');
+    setCurrentCase(item.caseData);
+    setElapsed(item.elapsed || 0);
+    setResult(item.result);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -63,11 +140,12 @@ const AIAssistant = () => {
       </div>
 
       <div className="layout-2col">
-        <div className="card">
-          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Info size={18} /> Patient Context
-          </h3>
-          <form onSubmit={handleSubmit} className="form-grid">
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          <div className="card">
+            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Info size={18} /> Patient Context
+            </h3>
+            <form onSubmit={handleSubmit} className="form-grid">
             <div className="input-group">
               <label>Current Symptoms</label>
               <div className="input-wrapper">
@@ -97,8 +175,38 @@ const AIAssistant = () => {
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
               {loading ? 'Analyzing with AI...' : <><Sparkles size={18} /> Generate Clinical Insight</>}
             </button>
-          </form>
-          {error && <div className="alert alert-error" style={{ marginTop: '1rem' }}><AlertCircle size={16} /> {error}</div>}
+            </form>
+            {error && <div className="alert alert-error" style={{ marginTop: '1rem' }}><AlertCircle size={16} /> {error}</div>}
+          </div>
+
+          <div className="card ai-history-card">
+            <div className="card-header" style={{ marginBottom: '1rem' }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+                <History size={18} /> Recent AI Chats
+              </h2>
+              <span className="badge badge-info">{historyItems.length}/{MAX_HISTORY}</span>
+            </div>
+            {historyItems.length === 0 ? (
+              <p style={{ color: 'var(--text-2)', fontSize: '0.85rem' }}>Your latest Clinical AI chats will appear here.</p>
+            ) : (
+              <div className="ai-history-list">
+                {historyItems.map((item) => (
+                  <div className="ai-history-item" key={item.id}>
+                    <button type="button" className="ai-history-main" onClick={() => loadHistoryItem(item)}>
+                      <FileText size={16} />
+                      <span>
+                        <strong>{item.caseData.symptoms || 'Clinical AI chat'}</strong>
+                        <small>{new Date(item.savedAt).toLocaleString()} - {item.result.source}</small>
+                      </span>
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => downloadPdf(item)} title="Download PDF">
+                      <Download size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
@@ -126,8 +234,11 @@ const AIAssistant = () => {
           {result && (
             <div className="card ai-result">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <span className="badge badge-success">✓ Analysis Complete</span>
+                <span className="badge badge-success">Analysis Complete</span>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => downloadPdf()} disabled={downloading}>
+                    <Download size={14} /> {downloading ? 'Preparing...' : 'PDF'}
+                  </button>
                   {result.cached && <span className="badge badge-info">Cached</span>}
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Clock size={12} /> {elapsed}s

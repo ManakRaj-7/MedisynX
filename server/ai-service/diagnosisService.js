@@ -6,9 +6,8 @@ const OpenAI = require('openai');
 const OPENROUTER_MODELS = [
   "nvidia/nemotron-3-super-120b-a12b:free",
   "google/gemma-4-26b-a4b-it:free",
-  "inclusionai/ring-2.6-1t:free",
-  "baidu/cobuddy:free"
 ];
+const OPENROUTER_MODEL_TIMEOUT_MS = Number(process.env.OPENROUTER_MODEL_TIMEOUT_MS || 8000);
 
 const cachePath = path.join(__dirname, 'cache.json');
 let cache = {};
@@ -90,13 +89,16 @@ const callOpenRouterAPI = async (prompt) => {
   });
 
   for (const modelName of OPENROUTER_MODELS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), OPENROUTER_MODEL_TIMEOUT_MS);
+
     try {
       console.log(`Calling OpenRouter with model: ${modelName}`);
       const completion = await openRouterClient.chat.completions.create({
         model: modelName,
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 1200,
-      });
+        max_tokens: 900,
+      }, { signal: controller.signal });
       
       const text = completion.choices?.[0]?.message?.content;
       if (!text || !text.trim()) {
@@ -115,6 +117,8 @@ const callOpenRouterAPI = async (prompt) => {
     } catch (error) {
       console.warn(`OpenRouter model ${modelName} failed. Trying next...`);
       console.error(error.message);
+    } finally {
+      clearTimeout(timeout);
     }
   }
   throw new Error("All OpenRouter models failed.");

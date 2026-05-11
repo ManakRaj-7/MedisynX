@@ -520,6 +520,67 @@ input:-webkit-autofill:active {
 
 .ai-disclaimer p { color: var(--text-2); font-size: 0.8rem; font-style: italic; margin: 0; }
 
+.ai-history-card {
+  padding: 1.25rem;
+}
+
+.ai-history-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ai-history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ai-history-main {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ai-history-main svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.ai-history-main span {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.ai-history-main strong,
+.ai-history-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-history-main strong {
+  color: var(--text-0);
+  font-size: 0.85rem;
+}
+
+.ai-history-main small {
+  color: var(--text-2);
+  font-size: 0.72rem;
+}
+
 /* ============ EMPTY STATE ============ */
 .empty-state {
   display: flex;
