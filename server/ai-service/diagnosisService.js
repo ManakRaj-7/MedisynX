@@ -1,6 +1,13 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
 const path = require('path');
+const OpenAI = require('openai');
+
+const OPENROUTER_MODELS = [
+  "deepseek/deepseek-chat-v3:free",
+  "qwen/qwen3-coder:free",
+  "meta-llama/llama-3.3-70b-instruct:free"
+];
 
 const cachePath = path.join(__dirname, 'cache.json');
 let cache = {};
@@ -67,18 +74,100 @@ const fallbackDiagnosis = (symptoms) => {
   return null;
 };
 
-const callGeminiAPI = async (payload) => {
+const callOpenRouterAPI = async (prompt) => {
+  if (!process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY === "missing") {
+    throw new Error('OpenRouter API key is not configured.');
+  }
+
+  const openRouterClient = new OpenAI({
+    apiKey: process.env.OPENROUTER_API_KEY,
+    baseURL: "https://openrouter.ai/api/v1",
+  });
+
+  for (const modelName of OPENROUTER_MODELS) {
+    try {
+      console.log(`Calling OpenRouter with model: ${modelName}`);
+      const completion = await openRouterClient.chat.completions.create({
+        model: modelName,
+        messages: [{ role: "user", content: prompt }]
+      });
+      
+      const text = completion.choices[0].message.content;
+      
+      let confidence = 75;
+      const confMatch = text.match(/(\d{1,3})\s*%/);
+      if (confMatch) {
+        const parsed = parseInt(confMatch[1]);
+        if (parsed >= 0 && parsed <= 100) confidence = parsed;
+      }
+      
+      console.log(`OpenRouter (${modelName}) response successfully received. Confidence: ${confidence}`);
+      return { text, confidence, modelUsed: modelName };
+    } catch (error) {
+      console.warn(`OpenRouter model ${modelName} failed. Trying next...`);
+      console.error(error.message);
+    }
+  }
+  throw new Error("All OpenRouter models failed.");
+};
+
+const callGeminiAPI = async (prompt) => {
   if (!process.env.GEMINI_API_KEY) {
     console.error('GEMINI_API_KEY is not set in environment variables');
     throw new Error('Gemini API key is not configured.');
   }
 
-  // Debug: confirm key is loaded (first 8 chars only for security)
   console.log('Gemini API Key loaded:', process.env.GEMINI_API_KEY.substring(0, 8) + '...');
-  console.log('Calling Gemini with model: gemini-1.5-flash');
+  console.log('Calling Gemini with model: gemini-2.5-flash');
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const MAX_RETRIES = 2;
+  const RETRY_DELAYS = [2000, 5000];
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      let confidence = 75;
+      const confMatch = text.match(/(\d{1,3})\s*%/);
+      if (confMatch) {
+        const parsed = parseInt(confMatch[1]);
+        if (parsed >= 0 && parsed <= 100) confidence = parsed;
+      }
+
+      console.log('Gemini response received successfully, confidence:', confidence);
+      return { text, confidence };
+    } catch (error) {
+      const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('Too Many');
+      
+      if (isRateLimit && attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAYS[attempt];
+        console.warn(`Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      console.error('FULL GEMINI ERROR:', error);
+      throw error;
+    }
+  }
+};
+
+const getDiagnosis = async (payload) => {
+  if (!payload.symptoms) {
+    throw new Error('Symptoms are required for analysis.');
+  }
+
+  await loadCache();
+  const cacheKey = getCacheKey(payload);
+
+  if (cache[cacheKey] && cache[cacheKey].source !== 'error-handler') {
+    return { ...cache[cacheKey], cached: true };
+  }
 
   const prompt = `You are MedisynX AI, an advanced clinical decision support system.
 Analyze the patient data below and return a structured medical insight in Markdown.
@@ -115,92 +204,54 @@ RESPONSE FORMAT (use exactly these headers):
 Keep the response professional, evidence-informed, and concise.
 End with: *"⚕️ This is an AI-assisted clinical insight and must be validated by a licensed healthcare professional before any clinical decision."*`;
 
-  // Retry logic for rate limit (429) errors on free tier
-  const MAX_RETRIES = 2;
-  const RETRY_DELAYS = [2000, 5000]; // 2s, then 5s
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
-      // Try to extract confidence from the AI's response
-      let confidence = 75; // default
-      const confMatch = text.match(/(\d{1,3})\s*%/);
-      if (confMatch) {
-        const parsed = parseInt(confMatch[1]);
-        if (parsed >= 0 && parsed <= 100) confidence = parsed;
-      }
-
-      console.log('Gemini response received successfully, confidence:', confidence);
-      return { text, confidence };
-    } catch (error) {
-      const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('Too Many');
-      
-      if (isRateLimit && attempt < MAX_RETRIES) {
-        const delay = RETRY_DELAYS[attempt];
-        console.warn(`Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      // Log the FULL error object for debugging — don't hide it
-      console.error('FULL GEMINI ERROR:', error);
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      if (error.status) console.error('Error status:', error.status);
-      if (error.statusText) console.error('Error statusText:', error.statusText);
-      if (error.errorDetails) console.error('Error details:', JSON.stringify(error.errorDetails));
-      throw error;
-    }
-  }
-};
-
-const getDiagnosis = async (payload) => {
-  if (!payload.symptoms) {
-    throw new Error('Symptoms are required for analysis.');
-  }
-
-  await loadCache();
-  const cacheKey = getCacheKey(payload);
-
-  // Only return cached results if they were successful (not error responses)
-  if (cache[cacheKey] && cache[cacheKey].source !== 'error-handler') {
-    return { ...cache[cacheKey], cached: true };
-  }
+  let sourceUsed = '';
+  let finalResult = null;
 
   try {
-    const { text, confidence } = await callGeminiAPI(payload);
-    const result = {
-      source: 'gemini-1.5-flash',
-      content: text,
-      confidence,
-      disclaimer: 'This insight is generated by AI and must be reviewed by a qualified healthcare professional before any clinical decision.',
-      timestamp: new Date().toISOString(),
-      cached: false,
-    };
-    cache[cacheKey] = result;
-    await saveCache();
-    return result;
-  } catch (error) {
-    const fallback = fallbackDiagnosis(payload.symptoms);
-    if (fallback) {
-      return { ...fallback, cached: false };
-    }
+    // 1. Try OpenRouter First (Free Models)
+    console.log("Attempting OpenRouter models first...");
+    const { text, confidence, modelUsed } = await callOpenRouterAPI(prompt);
+    sourceUsed = modelUsed;
+    finalResult = { text, confidence };
+  } catch (orError) {
+    console.log("OpenRouter failed entirely. Falling back to Gemini 2.5 Flash...");
+    try {
+      // 2. Fallback to Gemini
+      const { text, confidence } = await callGeminiAPI(prompt);
+      sourceUsed = 'gemini-2.5-flash';
+      finalResult = { text, confidence };
+    } catch (geminiError) {
+      // 3. Fallback to hardcoded fallback
+      const fallback = fallbackDiagnosis(payload.symptoms);
+      if (fallback) {
+        return { ...fallback, cached: false };
+      }
 
-    // Do NOT cache error responses — so retries can succeed after fix
-    return {
-      source: 'error-handler',
-      content: '### Service Unavailable\nThe AI service is currently experiencing high load. Please rely on clinical judgment and try again later.',
-      confidence: 0,
-      disclaimer: 'AI service unavailable.',
-      error: error.message,
-      cached: false,
-    };
+      return {
+        source: 'error-handler',
+        content: '### Service Unavailable\nThe AI service is currently experiencing high load. Please rely on clinical judgment and try again later.',
+        confidence: 0,
+        disclaimer: 'AI service unavailable.',
+        error: geminiError.message,
+        cached: false,
+      };
+    }
   }
+
+  const result = {
+    source: sourceUsed,
+    content: finalResult.text,
+    confidence: finalResult.confidence,
+    disclaimer: 'This insight is generated by AI and must be reviewed by a qualified healthcare professional before any clinical decision.',
+    timestamp: new Date().toISOString(),
+    cached: false,
+  };
+  cache[cacheKey] = result;
+  await saveCache();
+  return result;
 };
 
 module.exports = {
   getDiagnosis,
 };
+
