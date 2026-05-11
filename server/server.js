@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
     app: 'MedisynX API',
     version: '2.0.0',
     security: ['helmet', 'rate-limit', 'mongo-sanitize', 'hpp'],
-    ai: 'Gemini 2.5 Flash',
+    ai: 'OpenRouter primary, Gemini 2.5 Flash fallback',
   });
 });
 
