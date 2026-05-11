@@ -289,7 +289,7 @@ const Profile = () => {
               <div className="form-grid">
                 <div className="card-header">
                   <h2><Cpu size={20} /> AI Preferences</h2>
-                  <span className="badge badge-info">Gemini AI Engine</span>
+                  <span className="badge badge-info">MedisynX AI Engine</span>
                 </div>
 
                 <div className="input-group">
@@ -297,11 +297,12 @@ const Profile = () => {
                   <div className="input-wrapper">
                     <Cpu size={18} />
                     <select name="aiPreferences.model" value={profile.aiPreferences?.model} onChange={handleChange}>
-                      <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fastest)</option>
+                      <option value="smart-fallback">Smart Fallback (OpenRouter + Gemini)</option>
+                      <option value="gemini-2.5-flash">Gemini 2.5 Flash (Direct)</option>
                       <option value="gemini-2.5-pro">Gemini 2.5 Pro (Research Level)</option>
                     </select>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Flash is recommended for everyday clinical speed.</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Smart Fallback uses free OpenRouter models first to save usage.</p>
                 </div>
 
                 <div className="input-group">

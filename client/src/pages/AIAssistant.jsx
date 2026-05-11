@@ -57,7 +57,7 @@ const AIAssistant = () => {
             <h1 style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               Clinical AI <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>AI Powered</span>
             </h1>
-            <p style={{ color: 'var(--text-2)', marginTop: 2 }}>Powered by Gemini 1.5 Flash — Structured diagnosis with confidence scoring</p>
+            <p style={{ color: 'var(--text-2)', marginTop: 2 }}>Powered by MedisynX AI Engine — Structured diagnosis with confidence scoring</p>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ const AIAssistant = () => {
               </div>
             </div>
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-              {loading ? 'Analyzing with Gemini...' : <><Sparkles size={18} /> Generate Clinical Insight</>}
+              {loading ? 'Analyzing with AI...' : <><Sparkles size={18} /> Generate Clinical Insight</>}
             </button>
           </form>
           {error && <div className="alert alert-error" style={{ marginTop: '1rem' }}><AlertCircle size={16} /> {error}</div>}
@@ -113,7 +113,7 @@ const AIAssistant = () => {
           {loading && (
             <div className="card" style={{ minHeight: 400 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 24, color: 'var(--primary)' }}>
-                <Zap size={18} /> <span style={{ fontWeight: 600 }}>Processing with Gemini 2.5 Flash...</span>
+                <Zap size={18} /> <span style={{ fontWeight: 600 }}>Processing Clinical AI...</span>
               </div>
               <div className="skeleton" style={{ height: 8, width: '60%', marginBottom: 24 }}></div>
               <div className="skeleton" style={{ height: 24, width: '40%', marginBottom: 16 }}></div>
