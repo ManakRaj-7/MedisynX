@@ -4,9 +4,10 @@ const path = require('path');
 const OpenAI = require('openai');
 
 const OPENROUTER_MODELS = [
-  "deepseek/deepseek-chat-v3:free",
-  "qwen/qwen3-coder:free",
-  "meta-llama/llama-3.3-70b-instruct:free"
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "inclusionai/ring-2.6-1t:free",
+  "baidu/cobuddy:free"
 ];
 
 const cachePath = path.join(__dirname, 'cache.json');
@@ -82,6 +83,10 @@ const callOpenRouterAPI = async (prompt) => {
   const openRouterClient = new OpenAI({
     apiKey: process.env.OPENROUTER_API_KEY,
     baseURL: "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": process.env.CLIENT_URL || "http://localhost:5173",
+      "X-Title": "MedisynX",
+    },
   });
 
   for (const modelName of OPENROUTER_MODELS) {
@@ -89,10 +94,14 @@ const callOpenRouterAPI = async (prompt) => {
       console.log(`Calling OpenRouter with model: ${modelName}`);
       const completion = await openRouterClient.chat.completions.create({
         model: modelName,
-        messages: [{ role: "user", content: prompt }]
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1200,
       });
       
-      const text = completion.choices[0].message.content;
+      const text = completion.choices?.[0]?.message?.content;
+      if (!text || !text.trim()) {
+        throw new Error('OpenRouter returned an empty response.');
+      }
       
       let confidence = 75;
       const confMatch = text.match(/(\d{1,3})\s*%/);
@@ -208,18 +217,17 @@ End with: *"⚕️ This is an AI-assisted clinical insight and must be validated
   let finalResult = null;
 
   try {
-    // Gemini is the primary provider for MedisynX. OpenRouter free models are used only as fallback
-    // because their availability and rate limits can vary by model/provider.
-    const { text, confidence } = await callGeminiAPI(prompt);
-    sourceUsed = 'gemini-2.5-flash';
+    // OpenRouter is the primary provider. Gemini is kept as a fallback provider.
+    const { text, confidence, modelUsed } = await callOpenRouterAPI(prompt);
+    sourceUsed = modelUsed;
     finalResult = { text, confidence };
-  } catch (geminiError) {
-    console.log("Gemini failed. Falling back to OpenRouter models...");
+  } catch (openRouterError) {
+    console.log("OpenRouter failed. Falling back to Gemini 2.5 Flash...");
     try {
-      const { text, confidence, modelUsed } = await callOpenRouterAPI(prompt);
-      sourceUsed = modelUsed;
+      const { text, confidence } = await callGeminiAPI(prompt);
+      sourceUsed = 'gemini-2.5-flash';
       finalResult = { text, confidence };
-    } catch (openRouterError) {
+    } catch (geminiError) {
       const fallback = fallbackDiagnosis(payload.symptoms);
       if (fallback) {
         return { ...fallback, cached: false };
@@ -230,7 +238,7 @@ End with: *"⚕️ This is an AI-assisted clinical insight and must be validated
         content: '### Service Unavailable\nThe AI service is currently experiencing high load. Please rely on clinical judgment and try again later.',
         confidence: 0,
         disclaimer: 'AI service unavailable.',
-        error: openRouterError.message || geminiError.message,
+        error: geminiError.message || openRouterError.message,
         cached: false,
       };
     }
